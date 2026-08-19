@@ -1,0 +1,232 @@
+/* ==========================================================================
+   SIPRO-KALTENG 2026 - BOQ QUANTITY TAKE-OFF CALCULATOR STYLES
+   ========================================================================== */
+
+.boq-layout {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .boq-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Category Sidebar List */
+.boq-sidebar-list {
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+#boqCategoriesList {
+  max-height: 75vh;
+  overflow-y: auto;
+  padding: 0.65rem;
+}
+
+.boq-sidebar-header {
+  padding: 0.85rem 1rem;
+  background: #f8fafc;
+  border-bottom: 1px solid var(--border-subtle);
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--text-main);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Formula Item in Sidebar */
+.boq-item-card {
+  padding: 0.75rem 0.85rem;
+  border-radius: var(--radius-md);
+  margin-bottom: 0.4rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  position: relative;
+}
+
+.boq-item-card:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  transform: translateX(2px);
+}
+
+.boq-item-card.active {
+  background: #f0f9ff;
+  border-color: #38bdf8;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.12);
+}
+
+.boq-item-card.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: #0284c7;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+}
+
+.boq-item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.boq-item-title {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #1e293b;
+  line-height: 1.3;
+}
+
+.boq-item-card.active .boq-item-title {
+  color: #0369a1;
+}
+
+.boq-item-sub {
+  font-size: 0.725rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.boq-item-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  padding-top: 0.35rem;
+  border-top: 1px dashed #e2e8f0;
+  margin-top: 0.15rem;
+}
+
+.btn-boq-action {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  border-radius: 4px;
+  padding: 0.2rem 0.45rem;
+  font-size: 0.725rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition: all var(--transition-fast);
+}
+
+.btn-boq-action:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
+.btn-boq-action.btn-boq-edit:hover {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #93c5fd;
+}
+
+.btn-boq-action.btn-boq-delete:hover {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+/* Active Formula Header Badges */
+.badge-custom-formula {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* Reference Specifications & Guide Table */
+.boq-ref-card {
+  margin-top: 1.25rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.boq-ref-header {
+  padding: 0.75rem 1rem;
+  background: #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.boq-ref-table-wrapper {
+  overflow-x: auto;
+  padding: 0;
+}
+
+.boq-ref-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.825rem;
+}
+
+.boq-ref-table th {
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 700;
+  text-align: left;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 2px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.boq-ref-table td {
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+  vertical-align: top;
+}
+
+.boq-ref-table tr:hover td {
+  background: #f8fafc;
+}
+
+.boq-ref-code {
+  font-family: var(--font-mono);
+  background: #f1f5f9;
+  color: #0369a1;
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}

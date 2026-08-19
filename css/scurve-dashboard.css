@@ -1,0 +1,175 @@
+/* ==========================================================================
+   SIPRO-KALTENG 2026 - DASHBOARD KURVA S & REALIZATION MONITORING STYLES
+   ========================================================================== */
+
+/* S-Curve Chart Container */
+.scurve-canvas-card {
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.scurve-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.scurve-title-box h2 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.3px;
+}
+
+.scurve-title-box p {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* Legend Badges */
+.scurve-legend-bar {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.legend-line-planned {
+  width: 24px;
+  height: 4px;
+  background: #2563eb;
+  border-radius: 2px;
+}
+
+.legend-line-actual {
+  width: 24px;
+  height: 4px;
+  background: #10b981;
+  border-radius: 2px;
+}
+
+.legend-line-critical {
+  width: 24px;
+  height: 4px;
+  background: #ef4444;
+  border-radius: 2px;
+}
+
+/* Canvas Wrapper with Retina support */
+.canvas-wrapper {
+  width: 100%;
+  height: 460px;
+  position: relative;
+  border-radius: var(--radius-lg);
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  overflow: hidden;
+}
+
+.canvas-wrapper canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* SCM Alert Warning Banner */
+.scm-alert-banner {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-left: 5px solid #ef4444;
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.scm-alert-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.scm-alert-icon {
+  color: #ef4444;
+  font-size: 1.5rem;
+}
+
+.scm-alert-text h4 {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #991b1b;
+}
+
+.scm-alert-text p {
+  font-size: 0.8rem;
+  color: #7f1d1d;
+  margin-top: 0.2rem;
+}
+
+/* Opname Input Matrix */
+.opname-grid-layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+  .opname-grid-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.opname-table-card {
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.opname-quick-card {
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.deviation-badge-pos {
+  color: #047857;
+  background: #ecfdf5;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+
+.deviation-badge-neg {
+  color: #b91c1c;
+  background: #fef2f2;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  font-family: var(--font-mono);
+}

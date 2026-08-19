@@ -1,0 +1,33 @@
+{
+  "name": "mirstyvanconstruction",
+  "version": "1.0.0",
+  "description": "Mirstyvan Construction 2026 - Civil Engineering & Project Management with Full Auth & Account Settings",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node backend/server.js",
+    "migrate": "node backend/database/migrate.js"
+  },
+  "keywords": ["construction", "rab", "boq", "ahsp", "kurva-s", "auth", "jwt", "2fa", "express", "postgresql"],
+  "author": "Mirstyvan Construction",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "express-validator": "^7.2.1",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^6.9.16",
+    "pg": "^8.13.1",
+    "multer": "^1.4.5-lts.1",
+    "qrcode": "^1.5.4",
+    "speakeasy": "^2.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}

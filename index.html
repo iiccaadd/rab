@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>MIRSTYVANCONSTRUCTION | Manajemen Proyek, RAB, BOQ, AHSP & Kurva S (Muara Teweh & Palangka Raya)</title>
+  <meta name="description" content="Aplikasi Web Mirstyvan Construction: Manajemen Proyek Konstruksi, Estimator RAB Dinamis, Kalkulator Volume BOQ Parametrik & Custom Rumus, Jadwal Waktu & Dashboard Kurva S dengan Database AHSP 2026 PUPR.">
+  
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Core Design System CSS -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/boq-calculator.css">
+  <link rel="stylesheet" href="css/rab-builder.css">
+  <link rel="stylesheet" href="css/time-schedule.css">
+  <link rel="stylesheet" href="css/scurve-dashboard.css">
+  <script src="js/api.js"></script>
+  <script src="js/auth-guard.js"></script>
+</head>
+<body>
+
+  <!-- Backdrop overlay for mobile sidebar -->
+  <div class="sidebar-mobile-backdrop" id="sidebarMobileBackdrop"></div>
+
+  <div class="app-layout">
+    
+    <!-- =================================================================== -->
+    <!-- SIDEBAR KIRI (VERTICAL NAVIGATION MENU WITH MODERN SVG ICONS)       -->
+    <!-- =================================================================== -->
+    <aside class="app-sidebar" id="appSidebar">
+      
+      <!-- BRAND & REGION HEADER -->
+      <div class="sidebar-header">
+        <div class="brand-section">
+          <div class="brand-logo-badge" title="Mirstyvan Construction">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 21h18M5 21V7l8-4v18M13 3l6 3v15M9 9v.01M9 12v.01M9 15v.01M9 18v.01M17 9v.01M17 12v.01M17 15v.01M17 18v.01"></path>
+            </svg>
+          </div>
+          <div class="brand-text">
+            <h1>MIRSTYVANCONSTRUCTION</h1>
+            <p>Civil Engineering & Construction</p>
+          </div>
+          <button class="btn-sidebar-collapse" id="btnToggleSidebarCollapse" title="Sembunyikan / Minimalkan Sidebar (Kecilkan Ikon)" aria-label="Toggle Sidebar">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="11 17 6 12 11 7"></polyline>
+              <polyline points="18 17 13 12 18 7"></polyline>
+            </svg>
+          </button>
+          <button class="btn-close-sidebar-mobile" id="btnCloseSidebarMobile" aria-label="Tutup Menu">&times;</button>
+        </div>
+
+        <!-- Regional Selector Box -->
+        <div class="sidebar-region-box">
+          <label for="regionSelect" class="sidebar-region-label">Acuan Satuan Harga:</label>
+          <select id="regionSelect" class="sidebar-region-select" title="Pilih Acuan Satuan Harga Regional">
+            <option value="MUARA_TEWEH">Muara Teweh (Kab. Barito Utara)</option>
+            <option value="PALANGKA_RAYA">Kota Palangka Raya</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- VERTICAL MENU ITEMS (8 URUTAN STANDAR) -->
+      <nav class="sidebar-nav" aria-label="Menu Utama Proyek">
+        <div class="nav-section-title">MENU UTAMA</div>
+
+        <!-- 1. Dashboard -->
+        <button class="nav-tab-btn active" data-view="dashboard" id="nav_tab_dashboard" data-tooltip="Dashboard Utama">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="9" rx="1"></rect>
+              <rect x="14" y="3" width="7" height="5" rx="1"></rect>
+              <rect x="14" y="12" width="7" height="9" rx="1"></rect>
+              <rect x="3" y="16" width="7" height="5" rx="1"></rect>
+            </svg>
+          </span>
+          <span class="nav-label">Dashboard</span>
+        </button>
+
+        <!-- 2. Dashboard Kurva S -->
+        <button class="nav-tab-btn" data-view="scurve" id="nav_tab_scurve" data-tooltip="Dashboard Kurva S (SCM)">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+              <polyline points="16 7 22 7 22 13"></polyline>
+            </svg>
+          </span>
+          <span class="nav-label">Dashboard Kurva S</span>
+          <span class="nav-tab-badge" id="navScmBadge" style="background:#fee2e2; color:#ef4444;">SCM</span>
+        </button>
+
+        <!-- 3. Penyusun RAB dan WBS -->
+        <button class="nav-tab-btn" data-view="rab" id="nav_tab_rab" data-tooltip="Penyusun RAB &amp; WBS">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path>
+              <rect x="9" y="3" width="6" height="4" rx="1"></rect>
+              <path d="M9 12h6M9 16h6"></path>
+            </svg>
+          </span>
+          <span class="nav-label">Penyusun RAB &amp; WBS</span>
+        </button>
+
+        <!-- 4. Kalkulator Volume -->
+        <button class="nav-tab-btn" data-view="boq" id="nav_tab_boq" data-tooltip="Kalkulator Volume Bangunan">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21.3 15.3l-6.6-6.6a1 1 0 0 0-1.4 0l-1.6 1.6 8 8 1.6-1.6a1 1 0 0 0 0-1.4z"></path>
+              <path d="M11.7 10.3L3.7 18.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l8-8"></path>
+              <line x1="7.5" y1="16.5" x2="9" y2="18"></line>
+              <line x1="10.5" y1="13.5" x2="12" y2="15"></line>
+              <line x1="13.5" y1="10.5" x2="15" y2="12"></line>
+            </svg>
+          </span>
+          <span class="nav-label">Kalkulator Volume</span>
+          <span class="nav-tab-badge" style="background:#dbeafe; color:#1e40af;">+ Custom</span>
+        </button>
+
+        <!-- 5. Master AHSP -->
+        <button class="nav-tab-btn" data-view="database" id="nav_tab_database" data-tooltip="Master AHSP PUPR">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+              <line x1="8" y1="6" x2="16" y2="6"></line>
+              <line x1="8" y1="10" x2="14" y2="10"></line>
+            </svg>
+          </span>
+          <span class="nav-label">Master AHSP</span>
+          <span class="nav-tab-badge" style="background:#fef3c7; color:#b45309;">3.170+</span>
+        </button>
+
+        <!-- 6. Jadwal dan Bobot -->
+        <button class="nav-tab-btn" data-view="schedule" id="nav_tab_schedule" data-tooltip="Jadwal Pelaksanaan &amp; Bobot">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+              <line x1="8" y1="14" x2="12" y2="14"></line>
+              <line x1="8" y1="17" x2="16" y2="17"></line>
+            </svg>
+          </span>
+          <span class="nav-label">Jadwal dan Bobot</span>
+        </button>
+
+        <!-- 7. Arus Kas & Termijn -->
+        <button class="nav-tab-btn" data-view="cashflow" id="nav_tab_cashflow" data-tooltip="Arus Kas &amp; Termijn Pembayaran">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+              <circle cx="12" cy="12" r="3"></circle>
+              <line x1="6" y1="12" x2="6.01" y2="12"></line>
+              <line x1="18" y1="12" x2="18.01" y2="12"></line>
+            </svg>
+          </span>
+          <span class="nav-label">Arus Kas &amp; Termijn</span>
+        </button>
+
+        <!-- 8. Dokumen Resmi & Ekspor (5 Format) -->
+        <button class="nav-tab-btn official-doc-tab" data-view="official_docs" id="nav_tab_official_docs" data-tooltip="Dokumen Resmi &amp; Ekspor">
+          <span class="nav-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+          </span>
+          <span class="nav-label">Dokumen Resmi &amp; Ekspor</span>
+          <span class="nav-tab-badge badge-pru">5 Format</span>
+        </button>
+      </nav>
+
+      <!-- SIDEBAR USER SHORTCUTS -->
+      <div class="sidebar-user-quicknav no-print" style="padding: 0.6rem 0.75rem; border-top: 1px solid #1e293b; display: flex; gap: 0.4rem;">
+        <a href="settings.html" class="btn btn-secondary btn-xs" style="flex: 1; text-decoration: none;" title="Pengaturan Akun" data-tooltip="Pengaturan Akun">
+          <svg class="icon-svg-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          <span>Pengaturan</span>
+        </a>
+        <button class="btn btn-secondary btn-xs" id="btnSidebarLogout" style="flex: 1; color: var(--rose-600); border-color: var(--rose-200);" title="Keluar / Logout" data-tooltip="Keluar / Logout">
+          <svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          <span>Keluar</span>
+        </button>
+      </div>
+
+      <!-- SIDEBAR FOOTER & TOOL BUTTONS -->
+      <div class="sidebar-footer no-print">
+        <div class="sidebar-actions-grid">
+          <button class="btn btn-secondary btn-xs" id="btnExportJson" title="Simpan Cadangan File Proyek" data-tooltip="Backup File Proyek">
+            <svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+            <span>Backup</span>
+          </button>
+          <button class="btn btn-secondary btn-xs" id="btnImportJson" title="Buka File Proyek Tersimpan" data-tooltip="Buka File Proyek">
+            <svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+            <span>Buka</span>
+          </button>
+          <input type="file" id="inputImportJson" accept=".json" style="display: none;">
+          <button class="btn btn-secondary btn-xs" id="btnResetProject" title="Muat Contoh Proyek Standar" data-tooltip="Reset Data Standar">
+            <svg class="icon-svg-sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+            <span>Reset</span>
+          </button>
+          <button class="btn btn-primary btn-xs" id="btnPrint" title="Cetak Format Dokumen Laporan" data-tooltip="Cetak Dokumen Laporan">
+            <svg class="icon-svg-sm" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+            <span>Cetak</span>
+          </button>
+        </div>
+        <div class="sidebar-version-tag">
+          Mirstyvan Construction 2026 &bull; Standar PUPR
+        </div>
+      </div>
+    </aside>
+
+    <!-- =================================================================== -->
+    <!-- MAIN CONTENT WRAPPER                                                -->
+    <!-- =================================================================== -->
+    <div class="app-main-wrapper">
+
+      <!-- TOP STATUS BAR -->
+      <header class="app-topbar no-print">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <button class="btn-mobile-menu-toggle" id="btnToggleMobileSidebar" aria-label="Buka Menu Navigasi Proyek">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+          <div class="topbar-info">
+            <span class="topbar-chip">Wilayah: <strong id="topbarRegionName">Muara Teweh (Kab. Barito Utara)</strong></span>
+            <span class="topbar-chip">Proyek: <strong id="topbarProjectName">PEMBANGUNAN KANTOR BPD</strong></span>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <a href="settings.html" class="topbar-chip topbar-user-badge" id="topbarUserLink" style="text-decoration: none; color: inherit;" title="Buka Pengaturan Akun">
+            <svg class="icon-svg-sm" viewBox="0 0 24 24" style="color: var(--primary-600);"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            <span id="topbarUserName">Pengaturan</span>
+          </a>
+          <button class="btn btn-outline btn-xs" id="btnTopLogout" title="Keluar dari Akun" style="color: var(--rose-600); border-color: var(--rose-200); background: #ffffff;">
+            <svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            <span>Keluar</span>
+          </button>
+          <span class="status-indicator-live"><span class="dot-pulse"></span> Standar PUPR 2026</span>
+        </div>
+      </header>
+
+      <!-- MAIN CONTENT AREA -->
+      <main class="app-main">
+
+      <!-- =================================================================== -->
+      <!-- VIEW 1: DASHBOARD EKSEKUTIF                                        -->
+      <!-- =================================================================== -->
+      <section id="view_dashboard" class="view-section active">
+      
+        <!-- GLOBAL KPI SUMMARY CARDS (HANYA DITAMPILKAN PADA DASHBOARD UTAMA) -->
+        <section class="kpi-grid" aria-label="Indikator Kinerja Utama">
+          <div class="kpi-card primary">
+            <div class="kpi-header">
+              <span class="kpi-title">Total Nilai Kontrak (RAB)</span>
+              <span class="kpi-icon">
+                <svg class="icon-svg-lg" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+              </span>
+            </div>
+            <div class="kpi-value" id="kpiContractValue">Rp 0</div>
+            <div class="kpi-subtext">Sudah termasuk PPN &amp; Jasa Kontraktor</div>
+          </div>
+
+          <div class="kpi-card success">
+            <div class="kpi-header">
+              <span class="kpi-title">Progres Fisik Aktual</span>
+              <span class="kpi-icon">
+                <svg class="icon-svg-lg" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+              </span>
+            </div>
+            <div class="kpi-value" id="kpiActualProgress">0.00%</div>
+            <div class="kpi-subtext" id="kpiTargetProgress">Target Rencana: 0.00%</div>
+          </div>
+
+          <div class="kpi-card info">
+            <div class="kpi-header">
+              <span class="kpi-title">Deviasi Kinerja (+/-)</span>
+              <span class="kpi-icon">
+                <svg class="icon-svg-lg" viewBox="0 0 24 24"><path d="M3 3v18h18"></path><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"></path></svg>
+              </span>
+            </div>
+            <div class="kpi-value" id="kpiDeviation">0.00%</div>
+            <div class="kpi-subtext" id="kpiStatusBadge">
+              <span class="badge badge-info">SIAP DIMULAI</span>
+            </div>
+          </div>
+
+          <div class="kpi-card warning">
+            <div class="kpi-header">
+              <span class="kpi-title">Basis Harga Satuan</span>
+              <span class="kpi-icon">
+                <svg class="icon-svg-lg" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+              </span>
+            </div>
+            <div class="kpi-value" style="font-size: 1.15rem;" id="kpiRegionBasis">SEMESTER II 2026</div>
+            <div class="kpi-subtext">Standar PUPR &amp; Regional Kalteng</div>
+          </div>
+        </section>
+        
+        <!-- Project Info Card -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Informasi Proyek &amp; Lokasi Pekerjaan</h2>
+              <p class="card-description">Ringkasan kontrak pelaksanaan proyek konstruksi aktif.</p>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="btnEditProjectInfo">
+              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+              <span>Ubah Data Proyek</span>
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="project-meta-grid">
+              <div class="meta-item"><span class="meta-label">Nama Pekerjaan / Paket</span><span class="meta-val" id="dashProjName">-</span></div>
+              <div class="meta-item"><span class="meta-label">Pemilik / Pengguna Jasa</span><span class="meta-val" id="dashProjOwner">-</span></div>
+              <div class="meta-item"><span class="meta-label">Lokasi / Acuan Wilayah</span><span class="meta-val" id="dashProjLoc">-</span></div>
+              <div class="meta-item"><span class="meta-label">Waktu Pelaksanaan</span><span class="meta-val font-mono" id="dashProjDur">-</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- S-Curve Preview Canvas Card on Dashboard -->
+        <div class="scurve-canvas-card">
+          <div class="scurve-header-row">
+            <div class="scurve-title-box">
+              <h2>Kurva S Pelaksanaan: Rencana vs Realisasi</h2>
+              <p>Grafik bobot kumulatif rencana (garis biru) vs bobot kumulatif realisasi (garis hijau/merah).</p>
+            </div>
+            <div class="scurve-legend-bar">
+              <div class="legend-item"><div class="legend-line-planned"></div><span>Rencana (%)</span></div>
+              <div class="legend-item"><div class="legend-line-actual"></div><span>Realisasi (%)</span></div>
+              <div class="legend-item"><div class="legend-line-critical"></div><span>Kritis (Deviasi &lt; -5%)</span></div>
+            </div>
+          </div>
+          
+          <div class="canvas-wrapper">
+            <canvas id="scurveCanvas"></canvas>
+          </div>
+        </div>
+
+        <!-- Breakdown Divisi Ringkas -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Distribusi Nilai per Divisi Pekerjaan</h3>
+            <button class="btn btn-outline btn-sm" onclick="window.siproApp.switchView('rab')">
+              <span>Buka Detail RAB</span>
+              <svg class="icon-svg" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            </button>
+          </div>
+          <div class="card-body" id="dashDivisionsList">
+            <!-- Rendered by bundle.js -->
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- =================================================================== -->
+      <!-- VIEW 2: DASHBOARD KURVA S & MONITORING REALISASI (FULL HD)          -->
+      <!-- =================================================================== -->
+      <section id="view_scurve" class="view-section">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <h2 class="view-title">Dashboard Kurva S Pelaksanaan &amp; Evaluasi Deviasi Proyek</h2>
+            <p class="view-subtitle">Grafik integrasi bobot rencana mingguan (dari Jadwal &amp; RAB) vs capaian fisik lapangan, evaluasi deviasi, dan peringatan dini Show Cause Meeting (SCM).</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-secondary btn-sm" onclick="window.siproApp.switchView('schedule')">
+              <svg class="icon-svg" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+              <span>Sesuaikan Jadwal Kerja</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- S-Curve Large High-Resolution Chart Card -->
+        <div class="scurve-canvas-card" style="margin-bottom: 1.5rem;">
+          <div class="scurve-header-row">
+            <div class="scurve-title-box">
+              <h2>Grafik Kurva S: Bobot Kumulatif Rencana vs Realisasi Fisik</h2>
+              <p>Otomatis disinkronkan dengan Matriks Jadwal Mingguan dan Data Opname Lapangan.</p>
+            </div>
+            <div class="scurve-legend-bar">
+              <div class="legend-item"><div class="legend-line-planned"></div><span>Kurva Rencana (Biru)</span></div>
+              <div class="legend-item"><div class="legend-line-actual"></div><span>Kurva Realisasi (Hijau)</span></div>
+              <div class="legend-item"><div class="legend-line-critical"></div><span>Ambang Kritis SCM (&lt; -5%)</span></div>
+            </div>
+          </div>
+          
+          <div class="canvas-wrapper" style="min-height: 380px;">
+            <canvas id="scurveCanvasFull" style="width: 100%; height: 380px;"></canvas>
+          </div>
+        </div>
+
+        <!-- SCM Warning Banner Container -->
+        <div id="scurveScmAlertContainer"></div>
+
+        <div class="opname-grid-layout">
+          
+          <!-- Opname History Table -->
+          <div class="opname-table-card">
+            <h3 style="font-size: 1.05rem; font-weight: 800; margin-bottom: 0.25rem; color: var(--text-main);">Rekapitulasi Opname Fisik Mingguan (Evaluasi Lapangan)</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">Perbandingan capaian fisik kumulatif terhadap target rencana dan catatan kondisi cuaca.</p>
+            
+            <div class="table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th style="width: 55px;" class="text-center">Minggu</th>
+                    <th style="width: 90px;" class="text-right">Rencana (%)</th>
+                    <th style="width: 95px;" class="text-right">Realisasi (%)</th>
+                    <th style="width: 90px;" class="text-center">Deviasi (+/-)</th>
+                    <th>Catatan Progres / Kendala Lapangan</th>
+                    <th style="width: 110px;" class="text-center">Log Cuaca</th>
+                  </tr>
+                </thead>
+                <tbody id="opnameHistoryTableBody">
+                  <!-- Rendered by bundle.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Quick Opname Input Form Card -->
+          <div class="opname-quick-card">
+            <h3 style="font-size: 1.05rem; font-weight: 800; margin-bottom: 0.25rem; color: var(--text-main);">Input Opname Mingguan</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.25rem;">Masukkan capaian progres kumulatif hasil pemeriksaan bersama PPK/Pengawas.</p>
+
+            <form id="formOpname">
+              <div class="form-group" style="margin-bottom: 1rem;">
+                <label class="form-label">Pilih Minggu Pelaksanaan:</label>
+                <select id="opnameWeekSelect" class="form-select font-mono font-bold" required></select>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 1rem;">
+                <label class="form-label">Progres Fisik Kumulatif (%):</label>
+                <input type="number" id="opnamePercentage" class="form-input font-mono font-bold" step="0.01" min="0" max="100" placeholder="Contoh: 15.50" required>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 1rem;">
+                <label class="form-label">Catatan Kendala &amp; Prestasi Pekerjaan:</label>
+                <textarea id="opnameNote" class="form-textarea" rows="3" placeholder="Pekerjaan struktur kolom lantai 1 selesai 100%, terkendala hujan 2 hari..."></textarea>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.25rem;">
+                <div class="form-group">
+                  <label class="form-label">Hari Cerah:</label>
+                  <input type="number" id="opnameWeatherGood" class="form-input font-mono" value="6" min="0" max="7">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Hari Hujan:</label>
+                  <input type="number" id="opnameWeatherRain" class="form-input font-mono" value="1" min="0" max="7">
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary" style="width: 100%;">
+                <svg class="icon-svg" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                <span>Simpan Laporan Opname</span>
+              </button>
+            </form>
+          </div>
+
+        </div>
+
+      </section>
+
+
+      <!-- =================================================================== -->
+      <!-- VIEW 3: RAB BUILDER                                                -->
+      <!-- =================================================================== -->
+      <section id="view_rab" class="view-section">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main);">Rencana Anggaran Biaya (RAB) Konstruksi</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Penyusunan hierarkis WBS divisi pekerjaan, kalkulasi otomatis harga satuan AHSP 2026, dan distribusi bobot persentase.</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="btn btn-secondary" id="btnAddDivision">
+              <svg class="icon-svg" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              <span>Tambah Kelompok Divisi</span>
+            </button>
+            <button class="btn btn-success" id="btnExportRabCsv">
+              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              <span>Unduh Excel / CSV</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Project Meta Showcase in RAB -->
+        <div id="rabProjectMetaShowcase"></div>
+
+        <!-- Divisions List Container -->
+        <div id="rabDivisionsContainer">
+          <!-- Rendered by bundle.js -->
+        </div>
+
+        <!-- Recapitulation Banner -->
+        <div id="rabRecapitulationShowcase"></div>
+
+      </section>
+
+
+      <!-- =================================================================== -->
+      <!-- VIEW 4: BOQ VOLUME CALCULATOR & CUSTOM FORMULA ENGINE              -->
+      <!-- =================================================================== -->
+      <section id="view_boq" class="view-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main);">Kalkulator Volume Pekerjaan (BOQ Take-Off Engine)</h2>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">Gunakan kumpulan 40+ rumus geometris standar lengkap (Persiapan s/d MEP) atau buat rumus kustom Anda sendiri untuk menghitung volume pekerjaan dan menerapkannya langsung ke RAB &amp; Backup Sheet.</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-primary" id="btnOpenCustomFormulaModal">
+              <svg class="icon-svg" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              <span>Buat Rumus Kustom Sendiri</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="boq-layout">
+          <!-- Sidebar Daftar Rumus -->
+          <div class="boq-sidebar-list">
+            <div class="boq-sidebar-header" style="display:flex; flex-direction:column; gap:0.5rem;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span>Daftar Model Rumus BOQ:</span>
+              </div>
+              <div style="position:relative;">
+                <input type="text" id="boqFormulaSearchInput" class="form-input" placeholder="Cari rumus (Besi, Baja, WF, Plat...)" style="font-size:0.775rem; padding:0.35rem 0.65rem 0.35rem 1.85rem; border-radius:6px;">
+                <svg class="icon-svg" viewBox="0 0 24 24" style="position:absolute; left:0.5rem; top:50%; transform:translateY(-50%); width:13px; height:13px; color:#94a3b8;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              </div>
+            </div>
+            <div id="boqCategoriesList">
+              <!-- Rendered by bundle.js -->
+            </div>
+          </div>
+
+          <!-- Active Calculator Form & Result Area -->
+          <div id="boqActiveCalcArea" style="flex: 1; display: flex; flex-direction: column; gap: 1.25rem;">
+            
+            <!-- Calculator Input & Parameters Card -->
+            <div class="card">
+              <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;">
+                <div style="flex: 1; min-width: 200px;">
+                  <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+                    <h3 class="card-title" id="boqActiveModelTitle" style="margin:0;">Kalkulator Volume Pekerjaan</h3>
+                    <div id="boqActiveModelBadge"></div>
+                  </div>
+                  <p class="card-description" id="boqActiveModelDesc" style="margin:0.25rem 0 0 0;">Masukkan parameter geometris dan dimensi fisik pekerjaan.</p>
+                </div>
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                  <div id="boqActiveCustomActions" style="display:flex; gap:0.4rem;"></div>
+                  <span class="badge badge-primary" id="boqActiveModelUnit">m<sup>3</sup></span>
+                </div>
+              </div>
+              <div class="card-body">
+                <form id="formBoqCalculator" novalidate>
+                  <div id="boqInputsContainer" class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+                    <!-- Rendered dynamically -->
+                  </div>
+
+                  <!-- Destination RAB Division / Item Selector -->
+                  <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem;">
+                    <h4 style="font-size: 0.85rem; font-weight: 700; color: #1e293b; margin-bottom: 0.5rem;">Terapkan Hasil ke Item RAB:</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                      <div>
+                        <label class="form-label" style="font-size: 0.775rem;">Pilih Divisi RAB Tujuan:</label>
+                        <select id="boqTargetDivisionSelect" class="form-select"></select>
+                      </div>
+                      <div>
+                        <label class="form-label" style="font-size: 0.775rem;">Pilih Item Pekerjaan Tujuan:</label>
+                        <select id="boqTargetItemSelect" class="form-select"></select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                    <button type="submit" class="btn btn-success" id="btnApplyBoqToRab">
+                      <svg class="icon-svg" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                      <span>Terapkan Volume ke RAB &amp; Format Backup</span>
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="btnResetBoqInputs">
+                      <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+                      <span>Reset Nilai</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <!-- Output Calculation Result Showcase -->
+            <div id="boqOutputsShowcase">
+              <!-- Rendered dynamically -->
+            </div>
+
+                        <!-- Reference Table & Technical Specs -->
+            <div id="boqFormulaRefTable"></div>
+
+            <!-- Step-by-Step Mathematical Audit Trail -->
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">Rincian Langkah Perhitungan Geometri (Audit Trail)</h3>
+              </div>
+              <div class="card-body">
+                <div id="boqAuditTrailSteps" style="font-family: var(--font-mono); font-size: 0.875rem; line-height: 1.8; color: #334155;">
+                  <!-- Rendered dynamically -->
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+
+      <!-- =================================================================== -->
+      <!-- VIEW 5: MASTER DATABASE AHSP 2026 (3.170+ ITEM STANDAR PUPR)        -->
+      <!-- =================================================================== -->
+      <section id="view_database" class="view-section">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <h2 class="view-title">Master Database AHSP &amp; Harga Satuan 2026</h2>
+            <p class="view-subtitle">Database Lengkap 3.170 Item Analisa Harga Satuan Cipta Karya (SE Bina Konstruksi No 47 Tahun 2026). Dilengkapi fitur pencarian instan, filter divisi, dan pengeditan harga satuan.</p>
+          </div>
+          <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+            <input type="text" id="dbSearchInput" class="form-input" placeholder="Cari item, nama atau kode AHSP..." style="width: 280px;">
+            <select id="dbDivisionFilter" class="form-select" style="min-width: 240px; max-width: 320px;">
+              <option value="">Semua Divisi / Bidang Pekerjaan</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" id="btnResetAhspDb" title="Muat Ulang Database Standar">
+              <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+              <span>Reset Standar</span>
+            </button>
+            <button class="btn btn-primary btn-sm" id="btnEditHargaKomponen" title="Edit Harga Satuan Bahan & Upah" style="background:var(--teal-600);">
+              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+              <span>Edit Harga Komponen</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding: 0.85rem 1.25rem; border-bottom: 1px solid var(--border-subtle); background: #f8fafc; flex-wrap:wrap; gap:0.5rem;">
+            <div style="font-size: 0.85rem; color: #475569;" id="dbItemCountBadge">
+              Menampilkan <strong id="dbCountTotal">3.170</strong> item analisa AHSP
+            </div>
+            <div style="display:flex; gap:0.5rem; align-items:center;">
+              <button class="btn btn-outline btn-sm" id="btnDbPrevPage">&lsaquo; Prev</button>
+              <span id="dbPaginationInfo" style="font-size:0.85rem; font-weight:700; font-family:var(--font-mono); min-width:110px; text-align:center;">Halaman 1 / 64</span>
+              <button class="btn btn-outline btn-sm" id="btnDbNextPage">Next &rsaquo;</button>
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width: 45px;" class="text-center">No</th>
+                  <th style="width: 110px;">Kode AHSP</th>
+                  <th>Uraian Analisa Pekerjaan (SE Bina Konstruksi 47/2026)</th>
+                  <th style="width: 65px;" class="text-center">Satuan</th>
+                  <th style="width: 135px;" class="text-right">Biaya Bahan (Rp)</th>
+                  <th style="width: 135px;" class="text-right">Biaya Upah (Rp)</th>
+                  <th style="width: 155px;" class="text-right">Harga Satuan HSP (Rp)</th>
+                  <th style="width: 110px;" class="text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="databaseAhspTableBody">
+                <!-- Rendered by bundle.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- =================================================================== -->
+      <!-- VIEW 6: JADWAL PELAKSANAAN & DISTRIBUSI BOBOT (TIME SCHEDULE)       -->
+      <!-- =================================================================== -->
+      <section id="view_schedule" class="view-section">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <h2 class="view-title">Jadwal Pelaksanaan &amp; Distribusi Bobot Mingguan (Time Schedule / Gantt)</h2>
+            <p class="view-subtitle">Matriks pembagian bobot rencana pekerjaan per minggu, kontrol durasi proyek, periode mulai/selesai per item, dan akumulasi kurva rencana.</p>
+          </div>
+          <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 0.4rem; background: #f8fafc; padding: 0.35rem 0.75rem; border-radius: 6px; border: 1px solid #cbd5e1;">
+              <span style="font-size: 0.85rem; font-weight: 600; color: #475569;">Durasi Proyek:</span>
+              <input type="number" id="scheduleDurationWeeksInput" class="form-input font-mono font-bold" min="1" max="52" style="width: 65px; text-align: center; padding: 0.2rem 0.4rem;">
+              <span style="font-size: 0.85rem; font-weight: 600; color: #475569;">Minggu</span>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="btnRecalculateSchedule" title="Hitung Ulang Distribusi Jadwal">
+              <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+              <span>Sinkronkan Jadwal</span>
+            </button>
+            <button class="btn btn-outline btn-sm" id="btnExportScheduleExcel" title="Unduh Matriks Jadwal ke Excel">
+              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              <span>Ekspor Matriks</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Schedule Summary Statistics Cards -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+          <div class="card" style="padding: 1rem; border-left: 4px solid var(--primary-600);">
+            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Total Durasi Waktu</div>
+            <div style="font-size: 1.35rem; font-weight: 800; font-family: var(--font-mono); color: var(--text-main);" id="schedStatDuration">16 Minggu</div>
+            <div style="font-size: 0.8rem; color: #64748b;" id="schedStatDays">112 Hari Kalender</div>
+          </div>
+          <div class="card" style="padding: 1rem; border-left: 4px solid var(--accent-emerald);">
+            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Item Pekerjaan Terjadwal</div>
+            <div style="font-size: 1.35rem; font-weight: 800; font-family: var(--font-mono); color: var(--accent-emerald);" id="schedStatItemCount">14 Item</div>
+            <div style="font-size: 0.8rem; color: #64748b;">Tersebar di seluruh divisi</div>
+          </div>
+          <div class="card" style="padding: 1rem; border-left: 4px solid #38bdf8;">
+            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Total Bobot Rencana</div>
+            <div style="font-size: 1.35rem; font-weight: 800; font-family: var(--font-mono); color: #0284c7;" id="schedStatTotalWeight">100.00%</div>
+            <div style="font-size: 0.8rem; color: #64748b;">Sesuai nilai RAB Kontrak</div>
+          </div>
+          <div class="card" style="padding: 1rem; border-left: 4px solid #f59e0b;">
+            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Puncak Beban Mingguan (Peak)</div>
+            <div style="font-size: 1.35rem; font-weight: 800; font-family: var(--font-mono); color: #d97706;" id="schedStatPeakWeek">Minggu ke-4</div>
+            <div style="font-size: 0.8rem; color: #64748b;" id="schedStatPeakWeight">Bobot: 18.15%</div>
+          </div>
+        </div>
+
+        <!-- Interactive Schedule Matrix Table Card -->
+        <div class="card">
+          <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+            <div>
+              <h3 class="card-title">Matriks Jadwal &amp; Distribusi Bobot WBS Mingguan</h3>
+              <p class="card-description">Ubah periode pelaksanaan (Minggu Mulai &amp; Selesai) pada setiap item untuk menyesuaikan kurva distribusi bobot.</p>
+            </div>
+            <div style="font-size:0.8rem; color:#64748b; font-style:italic;">
+              Tips: Kolom berlatar biru menunjukkan jadwal aktif beserta % bobot per minggu.
+            </div>
+          </div>
+          <div class="table-wrapper" style="max-height: 65vh; overflow: auto;">
+            <table class="data-table" id="scheduleMatrixTable" style="font-size: 0.82rem;">
+              <thead id="scheduleMatrixTableHead" style="position: sticky; top: 0; z-index: 10;">
+                <!-- Rendered dynamically by bundle.js -->
+              </thead>
+              <tbody id="scheduleMatrixTableBody">
+                <!-- Rendered dynamically by bundle.js -->
+              </tbody>
+              <tfoot id="scheduleMatrixTableFoot" style="position: sticky; bottom: 0; z-index: 10; background: #f8fafc; font-weight: bold; border-top: 2px solid #cbd5e1;">
+                <!-- Rendered dynamically by bundle.js -->
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- =================================================================== -->
+      <!-- VIEW 7: CASHFLOW & TERMIJN                                         -->
+      <!-- =================================================================== -->
+      <section id="view_cashflow" class="view-section">
+        
+        <div style="margin-bottom: 1.25rem;">
+          <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main);">Proyeksi Arus Kas &amp; Rencana Pembayaran Termijn (MC)</h2>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">Jadwal pencairan tagihan bulanan (Monthly Certificate / MC), pengembalian uang muka, dan jaminan retensi pemeliharaan.</p>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Rencana Tahapan Pencairan Pembayaran (Termijn)</h3>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width: 45px;" class="text-center">No</th>
+                  <th>Tahapan Pembayaran / Termijn</th>
+                  <th style="width: 100px;" class="text-center">Bobot Bayar (%)</th>
+                  <th style="width: 160px;" class="text-right">Nominal Pencairan (Rp)</th>
+                  <th style="width: 140px;" class="text-center">Jadwal Minggu</th>
+                  <th style="width: 110px;">Status</th>
+                  <th>Keterangan / Persyaratan Dokumen</th>
+                </tr>
+              </thead>
+              <tbody id="cashflowTermijnTableBody">
+                <!-- Rendered by bundle.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- =================================================================== -->
+      <!-- VIEW 8: DOKUMEN RESMI & EKSPOR 5 FORMAT STANDAR PUPR 2026           -->
+      <!-- =================================================================== -->
+      <section id="view_official_docs" class="view-section">
+        <div class="view-header">
+          <div>
+            <h2 class="view-title">Ekspor &amp; Cetak Dokumen Resmi Proyek (1 File &bull; 5 Sheet Standar PUPR)</h2>
+            <p class="view-subtitle">Format output presisi siap cetak PDF dan ekspor Microsoft Excel (.xls) 1 file berisi 5 lembar kerja (sheets) lengkap sesuai Standar Pemkab Barito Utara &amp; PUPR 2026</p>
+          </div>
+        </div>
+
+        <!-- HERO ACTION: 1 WORKFLOW EKSPOR 1 FILE 5 SHEET & CETAK BUNDEL -->
+        <div class="card" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff; border: 1px solid #334155; margin-bottom: 1.75rem; padding: 1.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <span class="badge" style="background: var(--accent-emerald); color: #064e3b; font-weight: 800; margin-bottom: 0.5rem;">WORKFLOW UTAMA</span>
+              <h3 style="font-size: 1.35rem; font-weight: 800; color: #ffffff; margin-bottom: 0.35rem;">Ekspor Terpadu 1 File Excel (5 Sheet Otomatis)</h3>
+              <p style="color: #94a3b8; font-size: 0.875rem; max-width: 650px; line-height: 1.5;">
+                Menghasilkan 1 file buku kerja Excel (.xls) lengkap dengan 5 sheet: <strong>[Sheet 1: RAB]</strong>, <strong>[Sheet 2: Rekap Volume BOQ]</strong>, <strong>[Sheet 3: Analisa AHSP Terpilih]</strong>, <strong>[Sheet 4: Harga Satuan Upah]</strong>, dan <strong>[Sheet 5: Harga Satuan Bahan &amp; Transportasi]</strong>.
+              </p>
+            </div>
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+              <button id="btnExportAllDocsExcel" class="btn btn-success btn-lg" style="box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3); font-weight: 800; font-size: 0.95rem; padding: 0.85rem 1.4rem;">
+                <svg class="icon-svg-lg" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                <span>Unduh 1 File Excel (5 Sheet)</span>
+              </button>
+              <button id="btnPrintAllDocsBundle" class="btn btn-primary btn-lg" style="box-shadow: 0 4px 14px rgba(56, 189, 248, 0.3); font-weight: 800; font-size: 0.95rem; padding: 0.85rem 1.4rem;">
+                <svg class="icon-svg-lg" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                <span>Cetak Bundel Dokumen (Semua Lampiran)</span>
+              </button>
+              <button id="btnOpenRekkapKebutuhan" class="btn btn-lg" style="background:var(--teal-600); color:#fff; font-weight:800; font-size:0.95rem; padding:0.85rem 1.4rem; box-shadow:0 4px 14px rgba(13,148,136,0.3);">
+                <svg class="icon-svg-lg" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+                <span>Rekap Kebutuhan Bahan & Tenaga</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+          <h4 style="font-size: 1rem; font-weight: 700; color: var(--navy-900);">Rincian Dokumen per Lampiran (Pratinjau Satuan):</h4>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.25rem; margin-bottom: 2rem;">
+          
+          <!-- TEMPLATE 1: RAB & REKAPITULASI -->
+          <div class="doc-item-card doc-card-1">
+            <div>
+              <div class="doc-card-header">
+                <span class="badge badge-primary">Lampiran 1</span>
+                <div class="doc-icon-badge" style="background: var(--primary-50); color: var(--primary-600);">
+                  <svg class="icon-svg-lg" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"></path><rect x="9" y="3" width="6" height="4" rx="1"></rect><path d="M9 12h6M9 16h6"></path></svg>
+                </div>
+              </div>
+              <h3 class="doc-card-title">1. Rencana Anggaran Biaya (RAB) &amp; Rekapitulasi</h3>
+              <p class="doc-card-desc">
+                Format tabel lengkap WBS, Kode AHSP, Kuantitas, Satuan, Harga Satuan, Subtotal Romawi per Divisi, Rekapitulasi Biaya Fisik, PPN 11%, dan Terbilang Rupiah resmi.
+              </p>
+            </div>
+            <div class="doc-card-actions">
+              <button id="btnExportRabExcel" class="btn btn-secondary btn-sm">
+                <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                <span>Unduh Excel (.xls)</span>
+              </button>
+              <button id="btnPrintRabDoc" class="btn btn-primary btn-sm">
+                <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                <span>Pratinjau / Cetak</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- TEMPLATE 2: PERHITUNGAN VOLUME / BOQ -->
+          <div class="doc-item-card doc-card-2">
+            <div>
+              <div class="doc-card-header">
+                <span class="badge badge-success">Lampiran 2</span>
+                <div class="doc-icon-badge" style="background: var(--accent-emerald-bg); color: var(--accent-emerald);">
+                  <svg class="icon-svg-lg" viewBox="0 0 24 24"><path d="M21.3 15.3l-6.6-6.6a1 1 0 0 0-1.4 0l-1.6 1.6 8 8 1.6-1.6a1 1 0 0 0 0-1.4z"></path><path d="M11.7 10.3L3.7 18.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l8-8"></path></svg>
+                </div>
+              </div>
+              <h3 class="doc-card-title">2. Perhitungan Volume Pekerjaan (BOQ)</h3>
+              <p class="doc-card-desc">
+                Tabel rincian dimensi geometri (Panjang x Lebar x Tinggi/Tebal x Jumlah = Volume Satuan) dengan parameter model kalkulator &amp; rumus kustom.
+              </p>
+            </div>
+            <div class="doc-card-actions">
+              <button id="btnExportVolumeExcel" class="btn btn-secondary btn-sm">
+                <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                <span>Unduh Excel (.xls)</span>
+              </button>
+              <button id="btnPrintVolumeDoc" class="btn btn-primary btn-sm">
+                <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                <span>Pratinjau / Cetak</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- TEMPLATE 3: DAFTAR ANALISA AHSP TERPILIH -->
+          <div class="doc-item-card doc-card-3">
+            <div>
+              <div class="doc-card-header">
+                <span class="badge badge-warning">Lampiran 3</span>
+                <div class="doc-icon-badge" style="background: var(--accent-amber-bg); color: var(--accent-amber);">
+                  <svg class="icon-svg-lg" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                </div>
+              </div>
+              <h3 class="doc-card-title">3. Daftar Analisa AHSP Terpilih (PUPR)</h3>
+              <p class="doc-card-desc">
+                Lembar analisa rincian Tenaga Kerja (A), Bahan (B), Alat (C), Biaya Langsung (D), Overhead 15% (E), dan Harga Satuan HSP Final (F) untuk item RAB terpilih.
+              </p>
+            </div>
+            <div class="doc-card-actions">
+              <button id="btnExportAnalisaExcel" class="btn btn-secondary btn-sm">
+                <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                <span>Unduh Excel (.xls)</span>
+              </button>
+              <button id="btnPrintAnalisaDoc" class="btn btn-primary btn-sm">
+                <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                <span>Pratinjau / Cetak</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- TEMPLATE 4: DAFTAR SATUAN UPAH -->
+          <div class="doc-item-card doc-card-4">
+            <div>
+              <div class="doc-card-header">
+                <span class="badge badge-info">Lampiran 4</span>
+                <div class="doc-icon-badge" style="background: var(--accent-indigo-bg); color: var(--accent-indigo);">
+                  <svg class="icon-svg-lg" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                </div>
+              </div>
+              <h3 class="doc-card-title">4. Daftar Satuan Upah Tenaga Kerja</h3>
+              <p class="doc-card-desc">
+                Tabel upah harian standar Pekerja, Mandor, Tukang Batu, Tukang Kayu, Tukang Besi, Kepala Tukang, Tukang Cat, dan Tukang Listrik regional 2026.
+              </p>
+            </div>
+            <div class="doc-card-actions">
+              <button id="btnExportUpahExcel" class="btn btn-secondary btn-sm">
+                <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                <span>Unduh Excel (.xls)</span>
+              </button>
+              <button id="btnPrintUpahDoc" class="btn btn-primary btn-sm">
+                <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                <span>Pratinjau / Cetak</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- TEMPLATE 5: DAFTAR SATUAN BAHAN & TRANSPORTASI -->
+          <div class="doc-item-card doc-card-5">
+            <div>
+              <div class="doc-card-header">
+                <span class="badge badge-danger">Lampiran 5</span>
+                <div class="doc-icon-badge" style="background: var(--accent-rose-bg); color: var(--accent-rose);">
+                  <svg class="icon-svg-lg" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                </div>
+              </div>
+              <h3 class="doc-card-title">5. Daftar Satuan Bahan &amp; Transportasi</h3>
+              <p class="doc-card-desc">
+                Daftar alfabetis harga bahan material lengkap beserta tabel perincian biaya transportasi quarry ke lokasi proyek khusus wilayah Barito Utara.
+              </p>
+            </div>
+            <div class="doc-card-actions">
+              <button id="btnExportBahanExcel" class="btn btn-secondary btn-sm">
+                <svg class="icon-svg" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                <span>Unduh Excel (.xls)</span>
+              </button>
+              <button id="btnPrintBahanDoc" class="btn btn-primary btn-sm">
+                <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                <span>Pratinjau / Cetak</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="app-footer no-print">
+      <div>
+        <strong>MIRSTYVANCONSTRUCTION 2026</strong> &bull; Sistem Manajemen Proyek, RAB, BOQ &amp; Kurva S Konstruksi
+      </div>
+      <div>
+        Standar Acuan: Permen PUPR &bull; Standar Satuan Harga Muara Teweh &amp; Palangka Raya Semester II 2026
+      </div>
+    </footer>
+
+    </div> <!-- app-main-wrapper -->
+  </div> <!-- app-layout -->
+
+  <!-- ===================================================================== -->
+  <!-- MODALS                                                                -->
+  <!-- ===================================================================== -->
+
+  <!-- Modal 1: Edit Informasi Proyek -->
+  <div class="modal-backdrop" id="modalProjectInfo">
+    <div class="modal-dialog" style="max-width: 650px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Pengaturan Informasi Proyek &amp; Kontrak</h3>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <form id="formProjectInfo">
+        <div class="modal-body">
+          <div class="form-grid">
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label class="form-label">Program Kegiatan:</label>
+              <input type="text" id="projProgramInput" class="form-input" placeholder="PROGRAM PENINGKATAN PRASARANA, SARANA, DAN UTILITAS UMUM (PSU)" required>
+            </div>
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label class="form-label">Kegiatan Program:</label>
+              <input type="text" id="projKegiatanInput" class="form-input" placeholder="URUSAN PENYELENGGARAAN PSU PERUMAHAN" required>
+            </div>
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label class="form-label">Nama Pekerjaan / Paket Proyek:</label>
+              <input type="text" id="projNameInput" class="form-input font-bold" placeholder="PEMBANGUNAN KANTOR BPD" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Lokasi / Wilayah Pekerjaan:</label>
+              <input type="text" id="projLocationInput" class="form-input" placeholder="KAB. BARITO UTARA" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tahun Anggaran:</label>
+              <input type="text" id="projYearInput" class="form-input font-mono" placeholder="2026" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nomor Kontrak Kerja:</label>
+              <input type="text" id="projContractNoInput" class="form-input font-mono" placeholder="600/08.KONTRAK/DPUPR-CK/2026">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Penyedia Jasa / Kontraktor Pelaksana:</label>
+              <input type="text" id="projContractorInput" class="form-input" placeholder="CV. BARITO UTARA KONSTRUKSI">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Konsultan Pengawas / Supervisi:</label>
+              <input type="text" id="projConsultantInput" class="form-input" placeholder="CV. KONSULTAN TEKNIK KAL-TENG">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Durasi Waktu Pelaksanaan (Minggu):</label>
+              <input type="number" id="projDurationInput" class="form-input font-mono font-bold" min="1" max="52" value="16" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Pajak Pertambahan Nilai PPN (%):</label>
+              <input type="number" id="projPpnInput" class="form-input font-mono font-bold" min="0" max="20" step="1" value="11" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-modal-cancel">Batal</button>
+          <button type="submit" class="btn btn-primary">Simpan Perubahan Data</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 2: Tambah Item Pekerjaan ke Divisi -->
+  <div class="modal-backdrop" id="modalAddItem">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Tambah Item Pekerjaan ke RAB</h3>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <form id="formAddItem">
+        <input type="hidden" id="addItemDivisionId">
+        <div class="modal-body">
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label class="form-label">Pilih Sumber Analisa Satuan:</label>
+            <select id="addItemSource" class="form-select">
+              <option value="ahsp">Katalog Standar AHSP PUPR 2026</option>
+              <option value="custom">Input Item / Harga Manual (Custom)</option>
+            </select>
+          </div>
+
+          <div id="ahspSelectGroup" class="form-group" style="margin-bottom: 1rem;">
+            <label class="form-label">Pilih Analisa Harga Satuan Pekerjaan:</label>
+            <select id="addItemAhspSelect" class="form-select font-mono" style="font-size:0.85rem;"></select>
+          </div>
+
+          <div id="customItemFieldsGroup" style="display: none; margin-bottom: 1rem;">
+            <div class="form-group" style="margin-bottom: 0.75rem;">
+              <label class="form-label">Uraian / Nama Pekerjaan (Ketik Manual):</label>
+              <input type="text" id="addItemCustomName" class="form-input" placeholder="Contoh: Pekerjaan Pemasangan Kanopi Baja / Pompa Air">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+              <div class="form-group">
+                <label class="form-label">Satuan:</label>
+                <input type="text" id="addItemCustomUnit" class="form-input font-mono" placeholder="m2, m3, m', ls, titik, kg, bh">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Harga Satuan (Rp):</label>
+                <input type="number" id="addItemCustomPrice" class="form-input font-mono" placeholder="0" step="any" min="0">
+              </div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
+            <div class="form-group">
+              <label class="form-label">Volume Pekerjaan:</label>
+              <input type="number" id="addItemVolume" class="form-input font-mono font-bold" step="any" value="1" min="0" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Mulai (Minggu ke-):</label>
+              <input type="number" id="addItemStartWeek" class="form-input font-mono" value="1" min="1" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Selesai (Minggu ke-):</label>
+              <input type="number" id="addItemEndWeek" class="form-input font-mono" value="4" min="1" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-modal-cancel">Batal</button>
+          <button type="submit" class="btn btn-primary">Masukkan ke RAB</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 3: Rincian Koefisien AHSP PUPR -->
+  <div class="modal-backdrop" id="modalAhspDetail">
+    <div class="modal-dialog" style="max-width: 850px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="ahspDetailTitle">Rincian Analisa Harga Satuan</h3>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body" id="ahspDetailBody">
+        <!-- Rendered by bundle.js -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-modal-cancel">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 4: Edit Analisa Harga Satuan Pekerjaan (AHSP) -->
+  <div class="modal-backdrop" id="modalEditAhsp">
+    <div class="modal-dialog" style="max-width: 650px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Edit Item Master AHSP 2026</h3>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <form id="formEditAhsp">
+        <input type="hidden" id="editAhspCode">
+        <div class="modal-body">
+          <div class="form-group" style="margin-bottom: 0.75rem;">
+            <label class="form-label">Kode Analisa AHSP:</label>
+            <input type="text" id="editAhspCodeDisplay" class="form-input font-mono font-bold" readonly style="background:#f1f5f9; color:#0f172a;">
+          </div>
+          <div class="form-group" style="margin-bottom: 0.75rem;">
+            <label class="form-label">Kelompok / Divisi Pekerjaan:</label>
+            <input type="text" id="editAhspDivision" class="form-input" readonly style="background:#f1f5f9; color:#475569;">
+          </div>
+          <div class="form-group" style="margin-bottom: 0.75rem;">
+            <label class="form-label">Uraian Analisa Pekerjaan (PUPR):</label>
+            <textarea id="editAhspName" class="form-textarea font-bold" rows="3" required></textarea>
+          </div>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
+            <div class="form-group">
+              <label class="form-label">Satuan Pengukuran:</label>
+              <input type="text" id="editAhspUnit" class="form-input font-mono font-bold" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Harga Satuan HSP (Rp):</label>
+              <input type="number" id="editAhspPrice" class="form-input font-mono font-bold" step="any" min="0" required style="color:var(--primary-700); font-size:1.05rem;">
+            </div>
+          </div>
+          <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:0.75rem; font-size:0.8rem; color:#1e40af;">
+            <strong>Info:</strong> Perubahan harga satuan atau nama AHSP pada database master akan langsung tersimpan dan otomatis memperbarui kalkulasi biaya pada seluruh RAB proyek yang menggunakan kode analisa ini.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-modal-cancel">Batal</button>
+          <button type="submit" class="btn btn-primary">Simpan Perubahan AHSP</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 5: Custom Formula Builder (Input Manual Rumus Custom & Edit) -->
+  <div class="modal-backdrop" id="modalCustomFormula">
+    <div class="modal-dialog" style="max-width: 700px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="customFormulaModalTitle">Buat Rumus Kustom Perhitungan Volume (Custom Formula)</h3>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <form id="formCustomFormula">
+        <input type="hidden" id="customFormulaId" value="">
+        <div class="modal-body">
+          <div class="form-group" style="margin-bottom: 0.85rem;">
+            <label class="form-label">Nama Rumus Pekerjaan:</label>
+            <input type="text" id="customFormulaName" class="form-input font-bold" placeholder="Contoh: Galian Tanah Pondasi Trapesium Khusus" required>
+          </div>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.85rem;">
+            <div class="form-group">
+              <label class="form-label">Kategori Divisi:</label>
+              <select id="customFormulaCategory" class="form-select">
+                <option value="earthwork">Pekerjaan Tanah &amp; Pasir</option>
+                <option value="structure">Pekerjaan Struktur &amp; Beton</option>
+                <option value="masonry">Pekerjaan Dinding &amp; Plesteran</option>
+                <option value="roofing">Pekerjaan Atap &amp; Plafon</option>
+                <option value="finishing">Pekerjaan Lantai &amp; Finishing</option>
+                <option value="custom">Rumus Kustom Lainnya</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Satuan Hasil Volume:</label>
+              <select id="customFormulaUnit" class="form-select font-mono font-bold">
+                <option value="m3">m³ (Meter Kubik)</option>
+                <option value="m2">m² (Meter Persegi)</option>
+                <option value="m'">m' (Meter Lari / Panjang)</option>
+                <option value="kg">kg (Kilogram Pembesian)</option>
+                <option value="bh">bh (Buah / Unit)</option>
+                <option value="titik">titik (Titik Instalasi)</option>
+                <option value="ls">ls (Lump Sum)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom: 0.85rem;">
+            <label class="form-label">Ekspresi Rumus Matematika (Gunakan operator + - * / ( ) dan nama variabel):</label>
+            <input type="text" id="customFormulaExpression" class="form-input font-mono font-bold" placeholder="Contoh: ((a + b) / 2) * t * L * n atau P * L * N" required style="font-size: 1rem; color: #0284c7;">
+            <span style="font-size: 0.75rem; color: #64748b;">Mendukung operator perkalian standar: <code>P * L * T * N</code> atau <code>P x L x N</code> atau <code>0.5 * (a + b) * t * L</code></span>
+          </div>
+          <div class="form-group" style="margin-bottom: 0.85rem;">
+            <label class="form-label">Daftar Variabel Input (Format: <code>kode: Label (Satuan)</code> per baris):</label>
+            <textarea id="customFormulaVars" class="form-textarea font-mono" rows="4" placeholder="Contoh:&#10;P: Panjang Bidang (m)&#10;L: Lebar Bidang (m)&#10;N: Jumlah Titik / Pengali" required></textarea>
+          </div>
+          <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 0.75rem; font-size: 0.8rem; color: #166534;">
+            <strong>Info:</strong> Rumus kustom yang Anda buat atau edit akan langsung tersimpan di sistem, muncul pada daftar model rumus BOQ, dan otomatis diekspor ke <strong>Format Perhitungan Volume Pekerjaan (Sheet 2)</strong> dengan rincian variabel dimensinya!
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-modal-cancel">Batal</button>
+          <button type="submit" class="btn btn-success" id="btnSubmitCustomFormula">Simpan &amp; Gunakan Rumus</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 6: Pratinjau Cetak Dokumen Resmi (5 Template Standar PUPR) -->
+  <div class="modal-backdrop" id="modalPrintDocument">
+    <div class="modal-dialog" style="max-width: 960px; width: 95vw;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="printDocumentPreviewTitle">Pratinjau Dokumen Resmi</h3>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body" style="background: #f8fafc; padding: 1.5rem; max-height: 75vh; overflow-y: auto;">
+        <div id="printDocumentPreviewBody" style="background: #fff; padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border-radius: 4px; border: 1px solid #e2e8f0;">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: space-between;">
+        <button type="button" class="btn btn-secondary btn-modal-cancel">Tutup</button>
+        <button type="button" class="btn btn-primary" id="btnExecutePrintModal" style="background: var(--navy-900);">
+          <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+          <span>Cetak Sekarang / Simpan PDF</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- ============================================================ -->
+  <!-- MODAL: EDIT HARGA KOMPONEN AHSP (Upah & Bahan)              -->
+  <!-- ============================================================ -->
+  <div class="modal-backdrop" id="modalEditHargaKomponen">
+    <div class="modal-dialog" style="max-width: 860px; width: 95vw;">
+      <div class="modal-header">
+        <h3 class="modal-title">Editor Harga Satuan Komponen AHSP</h3>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 0;">
+        <!-- Sub-tabs -->
+        <div style="display:flex; border-bottom: 2px solid var(--border-subtle); background:#f8fafc;">
+          <button id="tabKomponenUpah" class="btn" onclick="window._siproApp && window._siproApp.switchKomponenTab('upah')" style="border-radius:0; border:none; padding:0.75rem 1.5rem; font-weight:700; color:#0369a1; border-bottom:2px solid #0369a1; background:transparent; margin-bottom:-2px;">
+            👷 Upah Tenaga Kerja
+          </button>
+          <button id="tabKomponenBahan" class="btn" onclick="window._siproApp && window._siproApp.switchKomponenTab('bahan')" style="border-radius:0; border:none; padding:0.75rem 1.5rem; font-weight:600; color:#64748b; background:transparent;">
+            🧱 Harga Bahan Material
+          </button>
+        </div>
+        <!-- Search bar -->
+        <div style="padding:0.75rem 1.25rem; border-bottom:1px solid var(--border-subtle); display:flex; gap:0.75rem; align-items:center;">
+          <input type="text" id="komponenSearchInput" class="form-input" placeholder="Cari nama komponen..." style="flex:1;" oninput="window._siproApp && window._siproApp.renderKomponenEditor()">
+          <span id="komponenCountBadge" style="font-size:0.82rem; color:#64748b; white-space:nowrap;"></span>
+        </div>
+        <!-- Table -->
+        <div style="max-height: 55vh; overflow-y: auto;">
+          <table class="data-table" style="font-size:0.83rem;">
+            <thead id="komponenEditorHead">
+              <tr>
+                <th style="width:40px;" class="text-center">No</th>
+                <th>Uraian Komponen</th>
+                <th style="width:70px;" class="text-center">Satuan</th>
+                <th style="width:160px;" class="text-right">Harga Saat Ini (Rp)</th>
+                <th style="width:180px;" class="text-right">Update Harga (Rp)</th>
+              </tr>
+            </thead>
+            <tbody id="komponenEditorBody">
+              <!-- rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content:space-between;">
+        <div style="display:flex; gap:0.5rem;">
+          <button type="button" class="btn btn-secondary btn-modal-cancel">Tutup</button>
+          <button type="button" class="btn btn-outline btn-sm" id="btnResetHargaKomponen" style="color:#dc2626; border-color:#dc2626;">Reset ke Standar</button>
+        </div>
+        <button type="button" class="btn btn-primary" id="btnSimpanHargaKomponen" style="background:var(--teal-600);">
+          <svg class="icon-svg" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+          Simpan Perubahan Harga
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- MODAL: REKAP KEBUTUHAN BAHAN & TENAGA DARI AHSP TERPILIH   -->
+  <!-- ============================================================ -->
+  <div class="modal-backdrop" id="modalRekkapKebutuhan">
+    <div class="modal-dialog" style="max-width: 980px; width: 96vw;">
+      <div class="modal-header">
+        <h3 class="modal-title">Rekap Kebutuhan Bahan & Tenaga dari AHSP Terpilih</h3>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body" style="padding:0;">
+        <!-- Sub-tabs rekap -->
+        <div style="display:flex; border-bottom:2px solid var(--border-subtle); background:#f8fafc;">
+          <button id="tabRekkapBahan" class="btn" onclick="window._siproApp && window._siproApp.switchRekkapTab('bahan')" style="border-radius:0; border:none; padding:0.75rem 1.5rem; font-weight:700; color:#166534; border-bottom:2px solid #16a34a; background:transparent; margin-bottom:-2px;">
+            🧱 Rekap Kebutuhan Bahan
+          </button>
+          <button id="tabRekkapTenaga" class="btn" onclick="window._siproApp && window._siproApp.switchRekkapTab('tenaga')" style="border-radius:0; border:none; padding:0.75rem 1.5rem; font-weight:600; color:#64748b; background:transparent;">
+            👷 Rekap Kebutuhan Tenaga
+          </button>
+        </div>
+        <!-- Content -->
+        <div id="rekkapKebutuhanBody" style="max-height:65vh; overflow-y:auto; background:#fff; padding: 1rem 1.25rem;">
+          <!-- rendered by JS -->
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content:space-between;">
+        <button type="button" class="btn btn-secondary btn-modal-cancel">Tutup</button>
+        <button type="button" class="btn btn-primary" id="btnCetakRekkapKebutuhan" style="background:var(--navy-900);">
+          <svg class="icon-svg" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+          Cetak / Simpan PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DATA & APP SCRIPT -->
+  <script src="js/data/ahsp-database-2026.js"></script>
+  <script src="js/bundle.js"></script>
+</body>
+</html>

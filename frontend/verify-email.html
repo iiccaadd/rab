@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verifikasi Email - Sistem Autentikasi</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/api.js"></script>
+</head>
+<body>
+  <div class="auth-wrapper">
+    <div class="auth-card" style="text-align: center;">
+      <div class="auth-logo" id="statusLogo" style="margin: 0 auto 1.25rem auto;">
+        <span class="spinner" id="loadingSpinner" style="width: 24px; height: 24px; border-width: 3px;"></span>
+      </div>
+      <h1 class="auth-title" id="verifyTitle">Memverifikasi Email...</h1>
+      <p class="auth-subtitle" id="verifySubtitle" style="margin-bottom: 1.5rem;">Mohon tunggu sebentar selagi kami memvalidasi tautan Anda.</p>
+
+      <div id="alertBox" class="alert" style="display: none; text-align: left;"></div>
+
+      <div id="actionContainer" style="display: none; margin-top: 1.5rem;">
+        <a href="login.html" class="btn btn-primary">Lanjut ke Halaman Login</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+      const verifyTitle = document.getElementById('verifyTitle');
+      const verifySubtitle = document.getElementById('verifySubtitle');
+      const alertBox = document.getElementById('alertBox');
+      const actionContainer = document.getElementById('actionContainer');
+      const statusLogo = document.getElementById('statusLogo');
+
+      if (!token) {
+        verifyTitle.textContent = 'Token Tidak Ditemukan';
+        verifySubtitle.textContent = 'Tautan verifikasi tidak lengkap atau tidak valid.';
+        alertBox.textContent = 'Parameter token wajib disertakan dalam URL verifikasi.';
+        alertBox.className = 'alert alert-error';
+        alertBox.style.display = 'block';
+        actionContainer.style.display = 'block';
+        return;
+      }
+
+      try {
+        const type = urlParams.get('type');
+        let res;
+        if (type === 'change_email') {
+          res = await API.post('/api/settings/email/confirm', { token });
+        } else {
+          res = await API.get(`/api/auth/verify-email?token=${encodeURIComponent(token)}`);
+        }
+
+        if (res.success) {
+          statusLogo.style.background = 'linear-gradient(135deg, var(--emerald-500), var(--emerald-600))';
+          statusLogo.innerHTML = '✓';
+          statusLogo.style.fontSize = '24px';
+          statusLogo.style.fontWeight = 'bold';
+
+          verifyTitle.textContent = type === 'change_email' ? 'Perubahan Email Berhasil!' : 'Email Berhasil Diverifikasi!';
+          verifySubtitle.textContent = type === 'change_email' ? 'Alamat email baru Anda telah aktif dan diperbarui.' : 'Akun Anda sekarang telah aktif dan siap digunakan.';
+          alertBox.textContent = res.message || 'Verifikasi berhasil.';
+          alertBox.className = 'alert alert-success';
+          alertBox.style.display = 'block';
+          actionContainer.style.display = 'block';
+        } else {
+          statusLogo.style.background = 'linear-gradient(135deg, var(--rose-500), var(--rose-600))';
+          statusLogo.innerHTML = '✕';
+          statusLogo.style.fontSize = '24px';
+          statusLogo.style.fontWeight = 'bold';
+
+          verifyTitle.textContent = 'Verifikasi Gagal';
+          verifySubtitle.textContent = res.message || 'Token verifikasi tidak valid atau telah kedaluwarsa.';
+          alertBox.textContent = res.message || 'Gagal memverifikasi email.';
+          alertBox.className = 'alert alert-error';
+          alertBox.style.display = 'block';
+          actionContainer.style.display = 'block';
+        }
+      } catch (err) {
+        verifyTitle.textContent = 'Kesalahan Koneksi';
+        verifySubtitle.textContent = 'Gagal terhubung ke server saat memverifikasi.';
+        alertBox.textContent = 'Terjadi kesalahan jaringan.';
+        alertBox.className = 'alert alert-error';
+        alertBox.style.display = 'block';
+        actionContainer.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>

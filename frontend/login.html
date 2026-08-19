@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Masuk ke Akun - Sistem Autentikasi</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="js/api.js"></script>
+  <script src="js/auth-guard.js"></script>
+</head>
+<body>
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-logo">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        </div>
+        <h1 class="auth-title" id="pageTitle">Selamat Datang</h1>
+        <p class="auth-subtitle" id="pageSubtitle">Masukkan kredensial akun Anda untuk masuk</p>
+      </div>
+
+      <!-- Alert Box -->
+      <div id="alertBox" class="alert" style="display: none;"></div>
+
+      <!-- STEP 1: FORM LOGIN UTAMA -->
+      <form id="formLogin">
+        <div class="form-group">
+          <label class="form-label" for="email">Username atau Email</label>
+          <input type="text" id="email" class="form-input" placeholder="irsyadisty atau email@domain.com" required autocomplete="username">
+        </div>
+
+        <div class="form-group">
+          <div class="form-label">
+            <label for="password">Password</label>
+            <a href="forgot-password.html" class="link" style="font-size: 0.775rem;">Lupa password?</a>
+          </div>
+          <input type="password" id="password" class="form-input" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+
+        <button type="submit" id="btnLogin" class="btn btn-primary">
+          <span class="btn-text">Masuk</span>
+          <span class="spinner" style="display: none;"></span>
+        </button>
+      </form>
+
+      <!-- STEP 2: FORM 2FA OTP VERIFICATION (Jika 2FA aktif) -->
+      <form id="form2FA" style="display: none;">
+        <input type="hidden" id="tempToken">
+        
+        <div style="text-align: center; margin-bottom: 1.25rem;">
+          <p style="font-size: 0.85rem; color: var(--slate-600);">Buka aplikasi Google Authenticator Anda dan masukkan 6 digit kode OTP verifikasi:</p>
+        </div>
+
+        <div class="form-group">
+          <input type="text" id="otpCode" class="form-input font-mono" maxlength="6" placeholder="123456" style="font-size: 1.5rem; text-align: center; letter-spacing: 6px; font-weight: 700;" autocomplete="one-time-code" required>
+        </div>
+
+        <button type="submit" id="btnVerify2FA" class="btn btn-primary" style="margin-bottom: 0.75rem;">
+          <span class="btn-text">Verifikasi Kode 2FA</span>
+          <span class="spinner" style="display: none;"></span>
+        </button>
+
+        <button type="button" id="btnBackToLogin" class="btn btn-secondary">
+          <span>Kembali ke Login</span>
+        </button>
+      </form>
+
+      <div class="auth-footer" id="authFooter">
+        Belum memiliki akun? <a href="register.html" class="link">Daftar sekarang</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/login.js"></script>
+</body>
+</html>
