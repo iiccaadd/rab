@@ -3708,6 +3708,8 @@
 
       this.initDom();
       this.initEvents();
+      this.initAuthPortal();
+      this.initSettingsManager();
       this.render();
     }
 
@@ -4260,6 +4262,10 @@
       document.querySelectorAll('.view-section').forEach(sec => {
         sec.classList.toggle('active', sec.id === ('view_' + viewId));
       });
+
+      if (viewId === 'settings') {
+        this.loadUserProfile();
+      }
 
       this.render();
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -5530,6 +5536,792 @@
       setTimeout(() => {
         toast.remove();
       }, 3500);
+    }
+
+    // =========================================================================
+    // AUTHENTICATION & SINGLE-PAGE PORTAL CONTROLLER
+    // =========================================================================
+    initAuthPortal() {
+      window._showAuthOverlay = (msg) => this.showAuthOverlay(msg);
+      window._hideAuthOverlay = () => this.hideAuthOverlay();
+
+      const overlay = document.getElementById('authPortalOverlay');
+      if (!overlay) return;
+
+      // Tab switcher handlers (Masuk, Daftar Baru, Lupa Sandi)
+      const tabBtns = overlay.querySelectorAll('.auth-tab-btn');
+      tabBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const targetTabId = btn.getAttribute('data-auth-tab');
+          this.switchAuthTab(targetTabId);
+        });
+      });
+
+      const btnGoToForgot = document.getElementById('btnGoToForgot');
+      if (btnGoToForgot) {
+        btnGoToForgot.addEventListener('click', (e) => {
+          e.preventDefault();
+          this.switchAuthTab('authTabForgot');
+        });
+      }
+
+      const btnBackToLogin = document.getElementById('btnBackToLogin');
+      if (btnBackToLogin) {
+        btnBackToLogin.addEventListener('click', (e) => {
+          e.preventDefault();
+          this.switchAuthTab('authTabLogin');
+        });
+      }
+
+      const btnCancel2FA = document.getElementById('btnCancel2FA');
+      if (btnCancel2FA) {
+        btnCancel2FA.addEventListener('click', (e) => {
+          e.preventDefault();
+          this.switchAuthTab('authTabLogin');
+        });
+      }
+
+      // 1. Form Login Submit
+      const formLogin = document.getElementById('formPortalLogin');
+      if (formLogin) {
+        formLogin.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const emailOrUsername = document.getElementById('loginPortalEmail').value.trim();
+          const password = document.getElementById('loginPortalPassword').value;
+          const remember = document.getElementById('loginPortalRemember')?.checked || false;
+          const btnSubmit = document.getElementById('btnSubmitPortalLogin');
+
+          this.setBtnLoading(btnSubmit, true);
+          this.setAuthPortalAlert(null);
+
+          try {
+            const res = await API.login({ emailOrUsername, password, remember });
+            if (res.requires2FA) {
+              this.temp2FAToken = res.tempToken;
+              this.switchAuthTab('authTab2FA');
+              this.setAuthPortalAlert('info', 'Masukkan 6 digit kode dari Google Authenticator Anda.');
+            } else if (res.token) {
+              this.hideAuthOverlay();
+              this.showToast('Selamat datang kembali, ' + (res.user ? res.user.name : emailOrUsername) + '!');
+              this.loadUserProfile();
+              this.switchView('dashboard');
+            }
+          } catch (err) {
+            this.setAuthPortalAlert('danger', err.message || 'Login gagal. Periksa username dan password Anda.');
+          } finally {
+            this.setBtnLoading(btnSubmit, false);
+          }
+        });
+      }
+
+      // 2. Form Register Submit
+      const formRegister = document.getElementById('formPortalRegister');
+      if (formRegister) {
+        formRegister.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const name = document.getElementById('regPortalName').value.trim();
+          const email = document.getElementById('regPortalEmail').value.trim();
+          const password = document.getElementById('regPortalPassword').value;
+          const confirmPassword = document.getElementById('regPortalConfirmPassword').value;
+          const btnSubmit = document.getElementById('btnSubmitPortalRegister');
+
+          if (password !== confirmPassword) {
+            this.setAuthPortalAlert('danger', 'Konfirmasi kata sandi tidak cocok.');
+            return;
+          }
+
+          this.setBtnLoading(btnSubmit, true);
+          this.setAuthPortalAlert(null);
+
+          try {
+            const res = await API.register({ name, email, password, confirmPassword });
+            formRegister.reset();
+            this.switchAuthTab('authTabLogin');
+            const alertMsg = res.message || 'Pendaftaran berhasil! Akun Anda sedang menunggu persetujuan dari Admin (irsyadisty).';
+            this.setAuthPortalAlert('success', alertMsg);
+          } catch (err) {
+            this.setAuthPortalAlert('danger', err.message || 'Pendaftaran gagal.');
+          } finally {
+            this.setBtnLoading(btnSubmit, false);
+          }
+        });
+      }
+
+      // 3. Form Forgot Password Submit
+      const formForgot = document.getElementById('formPortalForgot');
+      if (formForgot) {
+        formForgot.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const email = document.getElementById('forgotPortalEmail').value.trim();
+          const btnSubmit = document.getElementById('btnSubmitPortalForgot');
+
+          this.setBtnLoading(btnSubmit, true);
+          this.setAuthPortalAlert(null);
+
+          try {
+            const res = await API.forgotPassword(email);
+            this.setAuthPortalAlert('success', res.message || 'Tautan reset kata sandi telah dikirim ke email Anda.');
+          } catch (err) {
+            this.setAuthPortalAlert('danger', err.message || 'Gagal memproses permintaan reset sandi.');
+          } finally {
+            this.setBtnLoading(btnSubmit, false);
+          }
+        });
+      }
+
+      // 4. Form 2FA OTP Submit on Login
+      const form2FA = document.getElementById('formPortal2FA');
+      if (form2FA) {
+        form2FA.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const code = document.getElementById('login2FACode').value.trim();
+          const btnSubmit = document.getElementById('btnSubmitPortal2FA');
+
+          if (!this.temp2FAToken) {
+            this.switchAuthTab('authTabLogin');
+            this.setAuthPortalAlert('danger', 'Sesi 2FA kedaluwarsa, silakan login kembali.');
+            return;
+          }
+
+          this.setBtnLoading(btnSubmit, true);
+          this.setAuthPortalAlert(null);
+
+          try {
+            const res = await API.verifyLogin2FA(this.temp2FAToken, code);
+            if (res.token) {
+              this.hideAuthOverlay();
+              this.showToast('Autentikasi 2FA berhasil!');
+              this.loadUserProfile();
+              this.switchView('dashboard');
+            }
+          } catch (err) {
+            this.setAuthPortalAlert('danger', err.message || 'Kode OTP tidak valid.');
+          } finally {
+            this.setBtnLoading(btnSubmit, false);
+          }
+        });
+      }
+
+      // Initial token check
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        this.showAuthOverlay();
+      } else {
+        this.hideAuthOverlay();
+        this.loadUserProfile();
+      }
+    }
+
+    switchAuthTab(tabId) {
+      const overlay = document.getElementById('authPortalOverlay');
+      if (!overlay) return;
+
+      overlay.querySelectorAll('.auth-tab-btn').forEach(btn => {
+        const isMatch = btn.getAttribute('data-auth-tab') === tabId;
+        btn.classList.toggle('active', isMatch);
+        btn.style.background = isMatch ? '#ffffff' : 'transparent';
+        btn.style.color = isMatch ? 'var(--slate-900)' : 'var(--slate-600)';
+        btn.style.fontWeight = isMatch ? '700' : '600';
+        btn.style.boxShadow = isMatch ? 'var(--shadow-sm)' : 'none';
+      });
+
+      overlay.querySelectorAll('.auth-tab-content').forEach(content => {
+        content.style.display = (content.id === tabId) ? 'block' : 'none';
+      });
+
+      this.setAuthPortalAlert(null);
+    }
+
+    showAuthOverlay(msg) {
+      const overlay = document.getElementById('authPortalOverlay');
+      if (overlay) {
+        overlay.style.display = 'flex';
+        if (msg) {
+          this.setAuthPortalAlert('warning', msg);
+        }
+      }
+    }
+
+    hideAuthOverlay() {
+      const overlay = document.getElementById('authPortalOverlay');
+      if (overlay) {
+        overlay.style.display = 'none';
+      }
+    }
+
+    setAuthPortalAlert(type, message) {
+      const alertEl = document.getElementById('authPortalAlert');
+      if (!alertEl) return;
+      if (!type || !message) {
+        alertEl.style.display = 'none';
+        alertEl.textContent = '';
+        return;
+      }
+      alertEl.className = 'alert alert-' + type;
+      alertEl.style.display = 'block';
+      alertEl.textContent = message;
+    }
+
+    setBtnLoading(btn, isLoading) {
+      if (!btn) return;
+      btn.disabled = isLoading;
+      const textSpan = btn.querySelector('.btn-text');
+      const spinner = btn.querySelector('.spinner');
+      if (textSpan) textSpan.style.opacity = isLoading ? '0.4' : '1';
+      if (spinner) spinner.style.display = isLoading ? 'inline-block' : 'none';
+    }
+
+    // =========================================================================
+    // SETTINGS & USER MANAGEMENT CONTROLLER
+    // =========================================================================
+    initSettingsManager() {
+      // Sub-tab switching in Settings View
+      const settingsTabBtns = document.querySelectorAll('.settings-tab-btn');
+      settingsTabBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const tabKey = btn.getAttribute('data-tab');
+          if (!tabKey) return;
+
+          settingsTabBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+
+          document.querySelectorAll('.settings-section').forEach(sec => {
+            sec.style.display = (sec.id === tabKey) ? 'block' : 'none';
+          });
+
+          if (tabKey === 'tabSessions') {
+            this.loadSessionsList();
+          } else if (tabKey === 'tabPreferences') {
+            this.loadUserPreferences();
+          } else if (tabKey === 'tabAdminUsers') {
+            this.loadAdminUsers();
+          }
+        });
+      });
+
+      // 1. Form Profile Save
+      const formProfile = document.getElementById('formProfile');
+      if (formProfile) {
+        formProfile.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const name = document.getElementById('profileName').value.trim();
+          const phone = document.getElementById('profilePhone').value.trim();
+          const bio = document.getElementById('profileBio').value.trim();
+          const btnSubmit = document.getElementById('btnSaveProfile');
+
+          this.setBtnLoading(btnSubmit, true);
+          try {
+            const res = await API.updateProfile({ name, phone, bio });
+            this.showToast('Profil berhasil diperbarui!');
+            if (res.user) {
+              const topbarUserName = document.getElementById('topbarUserName');
+              if (topbarUserName) topbarUserName.textContent = res.user.name;
+              localStorage.setItem('user_info', JSON.stringify(res.user));
+            }
+          } catch (err) {
+            alert(err.message || 'Gagal memperbarui profil.');
+          } finally {
+            this.setBtnLoading(btnSubmit, false);
+          }
+        });
+      }
+
+      // Avatar File Upload
+      const avatarInput = document.getElementById('avatarFileInput');
+      if (avatarInput) {
+        avatarInput.addEventListener('change', async (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+          const formData = new FormData();
+          formData.append('avatar', file);
+
+          try {
+            const res = await API.uploadAvatar(formData);
+            if (res.avatarUrl) {
+              const preview = document.getElementById('avatarPreview');
+              if (preview) preview.src = res.avatarUrl;
+              this.showToast('Foto profil berhasil diunggah!');
+            }
+          } catch (err) {
+            alert(err.message || 'Gagal mengunggah foto profil.');
+          }
+        });
+      }
+
+      // 2. Change Email
+      const formChangeEmail = document.getElementById('formChangeEmail');
+      if (formChangeEmail) {
+        formChangeEmail.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const newEmail = document.getElementById('newEmailInput').value.trim();
+          const btnSubmit = document.getElementById('btnChangeEmail');
+
+          this.setBtnLoading(btnSubmit, true);
+          try {
+            const res = await API.changeEmail(newEmail);
+            alert(res.message || 'Tautan konfirmasi telah dikirim ke alamat email baru.');
+            formChangeEmail.reset();
+          } catch (err) {
+            alert(err.message || 'Gagal memproses perubahan email.');
+          } finally {
+            this.setBtnLoading(btnSubmit, false);
+          }
+        });
+      }
+
+      // 3. Change Password
+      const formChangePassword = document.getElementById('formChangePassword');
+      if (formChangePassword) {
+        formChangePassword.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const oldPassword = document.getElementById('oldPassword').value;
+          const newPassword = document.getElementById('newPasswordInput').value;
+          const confirmPassword = document.getElementById('confirmNewPasswordInput').value;
+          const btnSubmit = document.getElementById('btnSavePassword');
+
+          if (newPassword !== confirmPassword) {
+            alert('Konfirmasi kata sandi baru tidak cocok.');
+            return;
+          }
+
+          this.setBtnLoading(btnSubmit, true);
+          try {
+            const res = await API.changePassword(oldPassword, newPassword, confirmPassword);
+            this.showToast('Kata sandi berhasil diperbarui!');
+            formChangePassword.reset();
+          } catch (err) {
+            alert(err.message || 'Gagal mengubah kata sandi.');
+          } finally {
+            this.setBtnLoading(btnSubmit, false);
+          }
+        });
+      }
+
+      // 4. Toggle 2FA Button
+      const btnToggle2FA = document.getElementById('btnSettingsToggle2FA');
+      if (btnToggle2FA) {
+        btnToggle2FA.addEventListener('click', (e) => {
+          e.preventDefault();
+          if (this.user2FAEnabled) {
+            this.openModal('modalDisable2FA');
+          } else {
+            this.startSetup2FA();
+          }
+        });
+      }
+
+      // 2FA Setup Form
+      const formSetup2FA = document.getElementById('formVerifySetup2FA');
+      if (formSetup2FA) {
+        formSetup2FA.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const secret = document.getElementById('setupSecretKey').value;
+          const token = document.getElementById('setupOtpCode').value.trim();
+          const btnSubmit = document.getElementById('btnSubmitSetup2FA');
+
+          this.setBtnLoading(btnSubmit, true);
+          try {
+            const res = await API.enable2FA(secret, token);
+            this.closeAllModals();
+            this.showToast('2FA berhasil diaktifkan pada akun Anda!');
+            this.loadUserProfile();
+          } catch (err) {
+            alert(err.message || 'Kode OTP tidak valid.');
+          } finally {
+            this.setBtnLoading(btnSubmit, false);
+          }
+        });
+      }
+
+      // 2FA Disable Form
+      const formDisable2FA = document.getElementById('formDisable2FA');
+      if (formDisable2FA) {
+        formDisable2FA.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const password = document.getElementById('disablePassword').value;
+          const btnSubmit = document.getElementById('btnConfirmDisable');
+
+          this.setBtnLoading(btnSubmit, true);
+          try {
+            const res = await API.disable2FA(password);
+            this.closeAllModals();
+            this.showToast('2FA berhasil dinonaktifkan.');
+            formDisable2FA.reset();
+            this.loadUserProfile();
+          } catch (err) {
+            alert(err.message || 'Gagal menonaktifkan 2FA. Periksa password Anda.');
+          } finally {
+            this.setBtnLoading(btnSubmit, false);
+          }
+        });
+      }
+
+      // 5. Revoke All Sessions
+      const btnRevokeAll = document.getElementById('btnSettingsRevokeAll');
+      if (btnRevokeAll) {
+        btnRevokeAll.addEventListener('click', async (e) => {
+          e.preventDefault();
+          if (confirm('Apakah Anda yakin ingin mengeluarkan seluruh sesi perangkat lain?')) {
+            try {
+              await API.revokeOtherSessions();
+              this.showToast('Semua sesi perangkat lain berhasil dihentikan.');
+              this.loadSessionsList();
+            } catch (err) {
+              alert(err.message || 'Gagal me-revoke sesi.');
+            }
+          }
+        });
+      }
+
+      // 6. Preferences Form
+      const formPref = document.getElementById('formPreferences');
+      if (formPref) {
+        formPref.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const emailNotif = document.getElementById('prefEmailNotif').checked;
+          const pushNotif = document.getElementById('prefPushNotif').checked;
+          const btnSubmit = document.getElementById('btnSavePreferences');
+
+          this.setBtnLoading(btnSubmit, true);
+          try {
+            await API.updatePreferences({ emailNotifications: emailNotif, pushNotifications: pushNotif });
+            this.showToast('Preferensi berhasil disimpan!');
+          } catch (err) {
+            alert(err.message || 'Gagal menyimpan preferensi.');
+          } finally {
+            this.setBtnLoading(btnSubmit, false);
+          }
+        });
+      }
+
+      // 7. Admin Users Controls
+      const btnRefreshAdminUsers = document.getElementById('btnRefreshAdminUsers');
+      if (btnRefreshAdminUsers) {
+        btnRefreshAdminUsers.addEventListener('click', () => this.loadAdminUsers());
+      }
+      const filterStatus = document.getElementById('filterAdminUserStatus');
+      if (filterStatus) {
+        filterStatus.addEventListener('change', () => this.filterAndRenderAdminUsers());
+      }
+      const searchUsers = document.getElementById('searchAdminUsers');
+      if (searchUsers) {
+        searchUsers.addEventListener('input', () => this.filterAndRenderAdminUsers());
+      }
+
+      // 8. Delete Account Modal & Submit
+      const btnOpenDelete = document.getElementById('btnOpenDeleteModal');
+      if (btnOpenDelete) {
+        btnOpenDelete.addEventListener('click', () => {
+          const target = document.getElementById('deleteEmailConfirmTarget');
+          if (target && this.currentUser) target.textContent = this.currentUser.email || this.currentUser.name;
+          this.openModal('modalDeleteAccount');
+        });
+      }
+
+      const formConfirmDelete = document.getElementById('formConfirmDelete');
+      if (formConfirmDelete) {
+        formConfirmDelete.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const password = document.getElementById('deletePasswordInput').value;
+          const email = document.getElementById('deleteEmailInput').value.trim();
+          const btnSubmit = document.getElementById('btnExecuteDelete');
+
+          this.setBtnLoading(btnSubmit, true);
+          try {
+            await API.deleteAccount({ password, email });
+            alert('Akun Anda telah dihapus.');
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('user_info');
+            window.location.reload();
+          } catch (err) {
+            alert(err.message || 'Gagal menghapus akun.');
+          } finally {
+            this.setBtnLoading(btnSubmit, false);
+          }
+        });
+      }
+    }
+
+    async loadUserProfile() {
+      try {
+        const res = await API.getProfile();
+        const user = res.user || res;
+        this.currentUser = user;
+        this.user2FAEnabled = !!user.twoFactorEnabled;
+
+        // Topbar
+        const topbarUserName = document.getElementById('topbarUserName');
+        if (topbarUserName) topbarUserName.textContent = user.name || 'Pengguna';
+
+        // Settings profile fields
+        const pName = document.getElementById('profileName');
+        if (pName) pName.value = user.name || '';
+        const pPhone = document.getElementById('profilePhone');
+        if (pPhone) pPhone.value = user.phone || '';
+        const pBio = document.getElementById('profileBio');
+        if (pBio) pBio.value = user.bio || '';
+        const curEmail = document.getElementById('currentEmailDisplay');
+        if (curEmail) curEmail.textContent = user.email || '-';
+
+        // Avatar preview
+        if (user.avatarUrl) {
+          const avatar = document.getElementById('avatarPreview');
+          if (avatar) avatar.src = user.avatarUrl;
+        }
+
+        // 2FA Badge & Toggle button text
+        const badge2FA = document.getElementById('settings2FABadge');
+        const btnToggle2FA = document.getElementById('btnSettingsToggle2FA');
+        if (badge2FA && btnToggle2FA) {
+          if (this.user2FAEnabled) {
+            badge2FA.className = 'badge badge-success';
+            badge2FA.textContent = 'Aktif (Terlindungi)';
+            btnToggle2FA.className = 'btn btn-outline';
+            btnToggle2FA.style.color = 'var(--rose-600)';
+            btnToggle2FA.style.borderColor = 'var(--rose-200)';
+            btnToggle2FA.textContent = 'Nonaktifkan 2FA';
+          } else {
+            badge2FA.className = 'badge badge-secondary';
+            badge2FA.textContent = 'Nonaktif';
+            btnToggle2FA.className = 'btn btn-primary';
+            btnToggle2FA.style.color = '';
+            btnToggle2FA.style.borderColor = '';
+            btnToggle2FA.textContent = 'Aktifkan 2FA';
+          }
+        }
+
+        // Admin Tab Check (Admin: irsyadisty)
+        const isAdmin = (user.name && user.name.toLowerCase() === 'irsyadisty') ||
+                        (user.email && user.email.toLowerCase().includes('irsyadisty')) ||
+                        user.role === 'admin';
+        const tabAdminBtn = document.getElementById('tabAdminUsersBtn');
+        if (tabAdminBtn) {
+          tabAdminBtn.style.display = isAdmin ? 'flex' : 'none';
+          if (isAdmin) {
+            this.loadAdminUsers();
+          }
+        }
+      } catch (err) {
+        console.warn('loadUserProfile error:', err);
+      }
+    }
+
+    async startSetup2FA() {
+      try {
+        const res = await API.setup2FA();
+        const qrImg = document.getElementById('qrCodeImg');
+        const secretTxt = document.getElementById('secretText');
+        const secretHidden = document.getElementById('setupSecretKey');
+
+        if (qrImg) qrImg.src = res.qrCodeUrl || '';
+        if (secretTxt) secretTxt.textContent = res.secret || '-';
+        if (secretHidden) secretHidden.value = res.secret || '';
+
+        this.openModal('modalSetup2FA');
+      } catch (err) {
+        alert(err.message || 'Gagal memulai setup 2FA.');
+      }
+    }
+
+    async loadSessionsList() {
+      const container = document.getElementById('settingsSessionsList');
+      if (!container) return;
+      container.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--slate-500);">Memuat daftar sesi...</div>';
+
+      try {
+        const res = await API.getSessions();
+        const sessions = res.sessions || [];
+        if (sessions.length === 0) {
+          container.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--slate-500);">Tidak ada data sesi.</div>';
+          return;
+        }
+
+        container.innerHTML = sessions.map(s => {
+          const isCurrent = s.isCurrent;
+          return `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1rem; background: ${isCurrent ? '#f0fdf4' : '#ffffff'}; border: 1px solid ${isCurrent ? '#bbf7d0' : '#e2e8f0'}; border-radius: var(--radius-md);">
+              <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <div style="width: 36px; height: 36px; border-radius: 50%; background: ${isCurrent ? '#dcfce7' : '#f1f5f9'}; display: flex; align-items: center; justify-content: center; color: ${isCurrent ? '#166534' : '#64748b'};">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                </div>
+                <div>
+                  <div style="font-weight: 700; font-size: 0.85rem; color: var(--slate-900);">
+                    ${s.userAgent || 'Browser / Perangkat Web'}
+                    ${isCurrent ? '<span class="badge badge-success" style="font-size: 10px; margin-left: 0.4rem;">Sesi Saat Ini</span>' : ''}
+                  </div>
+                  <div style="font-size: 0.75rem; color: var(--slate-500);">
+                    IP: <strong class="font-mono">${s.ip || '127.0.0.1'}</strong> &bull; Terakhir aktif: ${new Date(s.lastActive || Date.now()).toLocaleString('id-ID')}
+                  </div>
+                </div>
+              </div>
+              ${!isCurrent ? `
+                <button type="button" class="btn btn-secondary btn-xs" onclick="window._siproApp && window._siproApp.revokeSingleSession('${s.id}')" style="color: var(--rose-600);">
+                  Putuskan
+                </button>
+              ` : ''}
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        container.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--rose-500);">Gagal memuat sesi perangkat.</div>';
+      }
+    }
+
+    async revokeSingleSession(sessionId) {
+      if (!confirm('Putuskan sesi perangkat ini?')) return;
+      try {
+        await API.revokeSession(sessionId);
+        this.showToast('Sesi perangkat berhasil diputuskan.');
+        this.loadSessionsList();
+      } catch (err) {
+        alert(err.message || 'Gagal memutuskan sesi.');
+      }
+    }
+
+    async loadUserPreferences() {
+      try {
+        const res = await API.getPreferences();
+        const prefs = res.preferences || {};
+        const chkEmail = document.getElementById('prefEmailNotif');
+        const chkPush = document.getElementById('prefPushNotif');
+        if (chkEmail) chkEmail.checked = prefs.emailNotifications !== false;
+        if (chkPush) chkPush.checked = prefs.pushNotifications !== false;
+      } catch (err) {
+        console.warn('loadUserPreferences error:', err);
+      }
+    }
+
+    // --- ADMIN USER APPROVAL (KHUSUS ADMIN IRSYADISTY) ---
+    async loadAdminUsers() {
+      const tbody = document.getElementById('adminUsersTableBody');
+      if (!tbody) return;
+
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem; color: var(--slate-500);">Memuat data pendaftar...</td></tr>';
+
+      try {
+        const res = await API.request('/api/settings/admin/users');
+        this.cachedAdminUsers = res.users || [];
+
+        // Update pending count badge
+        const pendingCount = this.cachedAdminUsers.filter(u => (u.status || 'PENDING').toUpperCase() === 'PENDING').length;
+        const badge = document.getElementById('pendingUsersCountBadge');
+        if (badge) {
+          badge.textContent = pendingCount;
+          badge.style.display = pendingCount > 0 ? 'inline-block' : 'none';
+        }
+
+        this.filterAndRenderAdminUsers();
+      } catch (err) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem; color: var(--rose-500);">Gagal memuat daftar pengguna admin.</td></tr>';
+      }
+    }
+
+    filterAndRenderAdminUsers() {
+      const tbody = document.getElementById('adminUsersTableBody');
+      if (!tbody || !this.cachedAdminUsers) return;
+
+      const filterStatus = document.getElementById('filterAdminUserStatus')?.value || 'ALL';
+      const searchKeyword = (document.getElementById('searchAdminUsers')?.value || '').toLowerCase().trim();
+
+      const filtered = this.cachedAdminUsers.filter(u => {
+        const status = (u.status || 'PENDING').toUpperCase();
+        const matchesStatus = (filterStatus === 'ALL') || (status === filterStatus);
+        const name = (u.name || '').toLowerCase();
+        const email = (u.email || '').toLowerCase();
+        const matchesSearch = !searchKeyword || name.includes(searchKeyword) || email.includes(searchKeyword);
+        return matchesStatus && matchesSearch;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2.5rem; color: var(--slate-500);">Tidak ada data pengguna yang sesuai dengan filter.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(u => {
+        const status = (u.status || 'PENDING').toUpperCase();
+        let statusBadge = '<span class="badge badge-warning">🟡 Menunggu</span>';
+        if (status === 'APPROVED') statusBadge = '<span class="badge badge-success">🟢 Disetujui</span>';
+        if (status === 'REJECTED') statusBadge = '<span class="badge badge-danger">🔴 Ditolak</span>';
+
+        const isSuperAdmin = (u.name && u.name.toLowerCase() === 'irsyadisty') || (u.email && u.email.toLowerCase().includes('irsyadisty'));
+
+        const actions = isSuperAdmin ? `
+          <span style="font-size: 0.75rem; font-weight: 700; color: #166534;">🛡️ Akun Utama Admin</span>
+        ` : `
+          <div style="display: flex; gap: 0.4rem; justify-content: flex-end;">
+            ${status !== 'APPROVED' ? `
+              <button type="button" class="btn btn-success btn-xs" onclick="window._siproApp && window._siproApp.adminApproveUser('${u.id}')" title="Setujui Akun">
+                ✓ Setujui
+              </button>
+            ` : ''}
+            ${status !== 'REJECTED' ? `
+              <button type="button" class="btn btn-secondary btn-xs" onclick="window._siproApp && window._siproApp.adminRejectUser('${u.id}')" style="color: #b91c1c; border-color: #fca5a5;" title="Tolak Akun">
+                ✕ Tolak
+              </button>
+            ` : ''}
+            <button type="button" class="btn btn-outline btn-xs" onclick="window._siproApp && window._siproApp.adminDeleteUser('${u.id}')" style="color: #ef4444;" title="Hapus User">
+              🗑️
+            </button>
+          </div>
+        `;
+
+        return `
+          <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 0.85rem 1rem;">
+              <div style="font-weight: 700; color: var(--slate-900); font-size: 0.875rem;">${u.name || '-'}</div>
+              <div style="font-size: 0.75rem; color: var(--slate-500);">Role: <strong>${u.role || 'user'}</strong></div>
+            </td>
+            <td style="padding: 0.85rem 1rem;">
+              <div class="font-mono" style="font-size: 0.825rem; color: var(--slate-800);">${u.email || '-'}</div>
+              <div style="font-size: 0.75rem; color: var(--slate-500);">${u.phone || 'No telp: -'}</div>
+            </td>
+            <td style="padding: 0.85rem 1rem; font-size: 0.775rem; color: var(--slate-600);">
+              ${u.createdAt ? new Date(u.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
+            </td>
+            <td style="padding: 0.85rem 1rem; text-align: center;">
+              ${statusBadge}
+            </td>
+            <td style="padding: 0.85rem 1rem; text-align: right;">
+              ${actions}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async adminApproveUser(userId) {
+      if (!confirm('Setujui pendaftaran pengguna ini agar dapat login?')) return;
+      try {
+        await API.request('/api/settings/admin/users/' + encodeURIComponent(userId) + '/approve', { method: 'POST' });
+        this.showToast('Akun pengguna berhasil disetujui!');
+        this.loadAdminUsers();
+      } catch (err) {
+        alert(err.message || 'Gagal menyetujui akun pengguna.');
+      }
+    }
+
+    async adminRejectUser(userId) {
+      if (!confirm('Tolak akses pengguna ini?')) return;
+      try {
+        await API.request('/api/settings/admin/users/' + encodeURIComponent(userId) + '/reject', { method: 'POST' });
+        this.showToast('Akun pengguna ditolak.');
+        this.loadAdminUsers();
+      } catch (err) {
+        alert(err.message || 'Gagal menolak akun pengguna.');
+      }
+    }
+
+    async adminDeleteUser(userId) {
+      if (!confirm('Hapus pengguna ini secara permanen dari sistem?')) return;
+      try {
+        await API.request('/api/settings/admin/users/' + encodeURIComponent(userId), { method: 'DELETE' });
+        this.showToast('Pengguna berhasil dihapus.');
+        this.loadAdminUsers();
+      } catch (err) {
+        alert(err.message || 'Gagal menghapus pengguna.');
+      }
     }
   }
 

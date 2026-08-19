@@ -84,9 +84,9 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Root endpoint: arahkan langsung ke Portal Login
+// Root endpoint: arahkan langsung ke index.html (Portal Single Page App All-in-One)
 app.get('/', (req, res) => {
-  res.redirect('/login.html');
+  res.sendFile(path.resolve(__dirname, '../index.html'));
 });
 
 // 7. 404 Handler untuk API

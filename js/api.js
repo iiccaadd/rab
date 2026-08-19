@@ -91,9 +91,10 @@ const API = (() => {
             } else {
               isRefreshing = false;
               clearAuth();
-              // Redirect to login jika berada di halaman yang butuh auth
-              if (!window.location.pathname.includes('login.html') && !window.location.pathname.includes('register.html')) {
-                window.location.href = 'login.html?session_expired=true';
+              if (typeof window._showAuthOverlay === 'function') {
+                window._showAuthOverlay('Sesi Anda telah berakhir. Silakan login kembali.');
+              } else if (!window.location.pathname.includes('login.html') && !window.location.pathname.includes('register.html') && !window.location.pathname.includes('index.html')) {
+                window.location.href = 'index.html?session_expired=true';
               }
               return refreshData;
             }
