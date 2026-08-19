@@ -993,6 +993,16 @@
       return this.project;
     }
 
+    clearRabItems() {
+      this.project.divisions = [];
+      this.project.opnames = [];
+      this.project.totalDirectCost = 0;
+      this.project.ppnAmount = 0;
+      this.project.grandTotal = 0;
+      this.recalculateProject(this.project);
+      this.saveProject(this.project);
+    }
+
     recalculateProject(proj = null) {
       const p = proj || this.project;
       let totalDirectCost = 0;
@@ -4297,6 +4307,17 @@
         });
       }
 
+      const btnClearRab = document.getElementById('btnClearRabSheet');
+      if (btnClearRab) {
+        btnClearRab.addEventListener('click', () => {
+          if (confirm('Apakah Anda yakin ingin mengosongkan seluruh item dan kelompok divisi pada lembar RAB proyek ini? (Data proyek lama di arsip tetap aman).')) {
+            this.rabEngine.clearRabItems();
+            this.render();
+            this.showToast('Lembar RAB telah dikosongkan. Siap diisi dari awal!');
+          }
+        });
+      }
+
       const formAddItem = document.getElementById('formAddItem');
       if (formAddItem) {
         formAddItem.addEventListener('submit', (e) => {
@@ -5887,26 +5908,74 @@
       document.getElementById('projDurationInput').value = info.durationWeeks || 16;
       document.getElementById('projPpnInput').value = info.ppnPercent || 11;
 
+      // Default to "new_blank" so changing project info creates clean blank RAB by default
+      const rdoNew = document.querySelector('input[name="projSaveAction"][value="new_blank"]');
+      if (rdoNew) rdoNew.checked = true;
+
       this.openModal('modalProjectInfo');
     }
 
     saveProjectInfoForm() {
-      const info = this.rabEngine.project.info;
-      info.program = document.getElementById('projProgramInput').value;
-      info.kegiatan = document.getElementById('projKegiatanInput').value;
-      info.name = document.getElementById('projNameInput').value;
-      info.location = document.getElementById('projLocationInput').value;
-      info.year = document.getElementById('projYearInput').value;
-      info.contractNo = document.getElementById('projContractNoInput').value;
-      info.contractor = document.getElementById('projContractorInput').value;
-      info.consultant = document.getElementById('projConsultantInput').value;
-      info.durationWeeks = parseInt(document.getElementById('projDurationInput').value) || 16;
-      info.ppnPercent = parseFloat(document.getElementById('projPpnInput').value) || 11;
+      const saveAction = document.querySelector('input[name="projSaveAction"]:checked')?.value || 'new_blank';
 
-      this.rabEngine.saveProject();
-      this.closeModal('modalProjectInfo');
-      this.render();
-      this.showToast('Data Informasi Proyek berhasil diperbarui');
+      const newName = (document.getElementById('projNameInput').value || '').trim().toUpperCase();
+      const newProgram = (document.getElementById('projProgramInput').value || '').trim();
+      const newKegiatan = (document.getElementById('projKegiatanInput').value || '').trim();
+      const newLocation = (document.getElementById('projLocationInput').value || '').trim().toUpperCase();
+      const newYear = (document.getElementById('projYearInput').value || '2026').trim();
+      const newContractNo = (document.getElementById('projContractNoInput').value || '').trim();
+      const newContractor = (document.getElementById('projContractorInput').value || '').trim().toUpperCase();
+      const newConsultant = (document.getElementById('projConsultantInput').value || '').trim().toUpperCase();
+      const newDuration = parseInt(document.getElementById('projDurationInput').value) || 16;
+      const newPpn = parseFloat(document.getElementById('projPpnInput').value) || 11;
+
+      if (!newName) {
+        alert('Nama Paket Proyek harus diisi!');
+        return;
+      }
+
+      if (saveAction === 'new_blank') {
+        // 1. Auto-save current active project to archive list first
+        this.rabEngine.saveProject();
+
+        // 2. Create brand new project with clean blank RAB
+        const newProj = this.rabEngine.createNewProject({
+          name: newName,
+          program: newProgram,
+          kegiatan: newKegiatan,
+          location: newLocation,
+          year: newYear,
+          contractNo: newContractNo,
+          contractor: newContractor,
+          consultant: newConsultant,
+          durationWeeks: newDuration,
+          ppnPercent: newPpn,
+          withDefaultStructure: false // Clean blank worksheet
+        });
+
+        this.closeModal('modalProjectInfo');
+        this.render();
+        this.switchView('rab');
+        this.showToast('Proyek lama berhasil disimpan ke arsip. Lembar RAB baru dibuka bersih seperti awal!');
+      } else {
+        // Just update metadata of current project in place
+        const info = this.rabEngine.project.info;
+        info.name = newName;
+        info.program = newProgram;
+        info.kegiatan = newKegiatan;
+        info.location = newLocation;
+        info.year = newYear;
+        info.contractNo = newContractNo;
+        info.contractor = newContractor;
+        info.consultant = newConsultant;
+        info.durationWeeks = newDuration;
+        info.ppnPercent = newPpn;
+
+        this.rabEngine.saveProject();
+        this.closeModal('modalProjectInfo');
+        this.render();
+        this.showToast('Data Informasi Proyek berhasil diperbarui');
+      }
     }
 
     updateAddItemModalSource() {
