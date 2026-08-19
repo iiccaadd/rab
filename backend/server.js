@@ -12,42 +12,22 @@ const { apiGeneralLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
 
+// Trust proxy for Vercel & reverse proxy
+app.set('trust proxy', 1);
+
 // 1. Security Headers with Helmet
 app.use(
   helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'"],
-        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-        fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-        imgSrc: ["'self'", 'data:', 'blob:'],
-        connectSrc: ["'self'", env.FRONTEND_URL, 'http://localhost:5000', 'http://127.0.0.1:5000'],
-      },
-    },
+    contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false,
   })
 );
 
 // 2. CORS (Cross-Origin Resource Sharing)
-const allowedOrigins = [
-  env.FRONTEND_URL,
-  'http://localhost:5000',
-  'http://127.0.0.1:5000',
-  'http://localhost:3000',
-  'http://localhost:5173',
-];
-
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, postman, same-origin)
-      if (!origin || allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      return callback(new Error('Akses diblokir oleh kebijakan CORS.'));
-    },
-    credentials: true, // Izinkan pengiriman cookie
+    origin: true, // Allow all origins including Vercel domains dynamically with credentials
+    credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-CSRF-Protection'],
   })

@@ -21,12 +21,14 @@ const poolConfig = env.DB.connectionString
       connectionTimeoutMillis: 3000,
     };
 
-const pool = new Pool(poolConfig);
-let isPgAvailable = null;
+let isPgAvailable = (process.env.DATABASE_URL || (process.env.DB_HOST && process.env.DB_HOST !== 'localhost' && !process.env.VERCEL)) ? null : false;
+const pool = isPgAvailable !== false ? new Pool(poolConfig) : null;
 
-pool.on('error', () => {
-  isPgAvailable = false;
-});
+if (pool) {
+  pool.on('error', () => {
+    isPgAvailable = false;
+  });
+}
 
 // Fallback Local Storage Helper
 const localDbFile = process.env.VERCEL
@@ -379,7 +381,7 @@ function executeLocalQuery(text, params = []) {
 
 module.exports = {
   query: async (text, params) => {
-    if (isPgAvailable === false) {
+    if (!pool || isPgAvailable === false) {
       return executeLocalQuery(text, params);
     }
     try {
@@ -387,17 +389,10 @@ module.exports = {
       isPgAvailable = true;
       return res;
     } catch (err) {
-      if (err.code === 'ECONNREFUSED' || err.message.includes('connect') || err.message.includes('timeout')) {
-        isPgAvailable = false;
-        return executeLocalQuery(text, params);
-      }
-      // If table doesn't exist yet, fallback
-      if (err.code === '42P01') {
-        return executeLocalQuery(text, params);
-      }
-      throw err;
+      isPgAvailable = false;
+      return executeLocalQuery(text, params);
     }
   },
-  getClient: () => pool.connect(),
+  getClient: () => (pool ? pool.connect() : null),
   pool,
 };

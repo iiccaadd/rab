@@ -5,10 +5,11 @@ const rateLimit = require('express-rate-limit');
  */
 const loginRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 menit
-  max: 5, // Maksimal 5 permintaan gagal
-  skipSuccessfulRequests: true, // Hanya hitung percobaan yang gagal (status >= 400)
+  max: 15, // Toleransi login
+  skipSuccessfulRequests: true,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { trustProxy: false, xForwardedForHeader: false },
   message: {
     success: false,
     message: 'Terlalu banyak percobaan login gagal dari IP Anda. Silakan coba lagi setelah 15 menit.',
@@ -17,13 +18,14 @@ const loginRateLimiter = rateLimit({
 });
 
 /**
- * Rate Limiter untuk Permintaan Lupa Password (Maksimal 3 permintaan per 15 menit)
+ * Rate Limiter untuk Permintaan Lupa Password
  */
 const forgotPasswordRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 3,
+  max: 10,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { trustProxy: false, xForwardedForHeader: false },
   message: {
     success: false,
     message: 'Terlalu banyak permintaan reset password. Silakan coba lagi setelah 15 menit.',
@@ -32,14 +34,15 @@ const forgotPasswordRateLimiter = rateLimit({
 });
 
 /**
- * Rate Limiter untuk Verifikasi OTP 2FA (Maksimal 5 percobaan per 10 menit)
+ * Rate Limiter untuk Verifikasi OTP 2FA
  */
 const twoFactorRateLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
-  max: 5,
+  max: 15,
   skipSuccessfulRequests: true,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { trustProxy: false, xForwardedForHeader: false },
   message: {
     success: false,
     message: 'Terlalu banyak percobaan kode OTP yang salah. Silakan coba lagi beberapa saat lagi.',
@@ -48,13 +51,14 @@ const twoFactorRateLimiter = rateLimit({
 });
 
 /**
- * General API Limiter (100 permintaan per 15 menit)
+ * General API Limiter
  */
 const apiGeneralLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 200,
+  max: 500,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { trustProxy: false, xForwardedForHeader: false },
   message: {
     success: false,
     message: 'Terlalu banyak permintaan ke server. Silakan perlambat aktivitas Anda.',
