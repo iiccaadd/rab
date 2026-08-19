@@ -13,8 +13,13 @@ yarn-debug.log*
 yarn-error.log*
 *.log
 
-# Database fallback/local runtime caches
+# Database fallback/local runtime caches & user data
 backend/database/local_db.json
+backend/database/local_users.json
+backend/database/*.json
+*.sqlite
+*.sqlite3
+*.db
 
 # User Uploads
 uploads/*

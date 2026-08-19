@@ -5,10 +5,10 @@ const path = require('path');
 
 async function seedAdmin() {
   const adminData = {
-    name: 'irsyadisty',
-    email: 'irsyadisty@mirstyvanconstruction.com',
-    password: '11nov2026',
-    phoneNumber: '081234567890',
+    name: process.env.ADMIN_DEFAULT_USER || 'irsyadisty',
+    email: process.env.ADMIN_DEFAULT_EMAIL || 'admin@mirstyvanconstruction.com',
+    password: process.env.ADMIN_DEFAULT_PASSWORD || '11nov2026',
+    phoneNumber: process.env.ADMIN_DEFAULT_PHONE || '081234567890',
     bio: 'Administrator Utama Mirstyvan Construction',
   };
 
@@ -16,7 +16,7 @@ async function seedAdmin() {
   console.log('Seeding Akun Admin MIRSTYVANCONSTRUCTION...');
   console.log(`Username : ${adminData.name}`);
   console.log(`Email    : ${adminData.email}`);
-  console.log(`Password : ${adminData.password}`);
+  console.log(`Password : ********* (Protected)`);
   console.log('=======================================================');
 
   const passwordHash = await hashPassword(adminData.password);
