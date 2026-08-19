@@ -4950,15 +4950,15 @@
 
       const outShowcase = document.getElementById('boqOutputsShowcase');
       if (outShowcase) {
-        outShowcase.innerHTML = '<div class="card" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color:#ffffff; padding:1.25rem;">' +
-          '<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">' +
-          '<div>' +
-          '<div style="font-size:0.8rem; opacity:0.9; text-transform:uppercase; font-weight:700;">HASIL PERHITUNGAN VOLUME PEKERJAAN</div>' +
-          '<div style="font-size:2rem; font-weight:900; font-family:var(--font-mono); margin-top:0.25rem;">' +
-          calcRes.volume.toFixed(2) + ' <span style="font-size:1.1rem; font-weight:600;">' + Utils.formatUnitHtml(activeModel.unit) + '</span>' +
+        outShowcase.innerHTML = '<div class="card" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); color:#ffffff; padding:1.15rem; width:100%; max-width:100%; box-sizing:border-box; min-width:0;">' +
+          '<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.75rem;">' +
+          '<div style="min-width:0; flex:1 1 auto;">' +
+          '<div style="font-size:0.75rem; opacity:0.9; text-transform:uppercase; font-weight:700; letter-spacing:0.5px;">HASIL PERHITUNGAN VOLUME PEKERJAAN</div>' +
+          '<div style="font-size:1.75rem; font-weight:900; font-family:var(--font-mono); margin-top:0.25rem; line-height:1.2; word-break:break-word;">' +
+          calcRes.volume.toFixed(2) + ' <span style="font-size:1.05rem; font-weight:600;">' + Utils.formatUnitHtml(activeModel.unit) + '</span>' +
           '</div>' +
           '</div>' +
-          '<div style="background:rgba(255,255,255,0.15); padding:0.65rem 1rem; border-radius:6px; font-size:0.85rem;">' +
+          '<div style="background:rgba(255,255,255,0.18); padding:0.45rem 0.85rem; border-radius:6px; font-size:0.8rem; word-break:break-word; max-width:100%;">' +
           'Kode AHSP Acuan: <strong class="font-mono">' + (activeModel.ahspCode || 'PUPR 2026') + '</strong>' +
           '</div>' +
           '</div>' +
@@ -4967,7 +4967,7 @@
 
       const stepsContainer = document.getElementById('boqAuditTrailSteps');
       if (stepsContainer && calcRes.steps) {
-        stepsContainer.innerHTML = calcRes.steps.map((st, i) => '<div style="margin-bottom:0.35rem;"><strong>Langkah ' + (i + 1) + ':</strong> ' + st + '</div>').join('');
+        stepsContainer.innerHTML = calcRes.steps.map((st, i) => '<div style="margin-bottom:0.45rem; font-size:0.85rem; line-height:1.45; word-break:break-word; overflow-wrap:anywhere;"><strong>Langkah ' + (i + 1) + ':</strong> ' + st + '</div>').join('');
       }
     }
 
