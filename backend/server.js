@@ -112,22 +112,24 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 9. Start Server
-const server = app.listen(env.PORT, () => {
-  console.log('======================================================');
-  console.log(`🚀 Server Autentikasi berjalan di PORT: ${env.PORT}`);
-  console.log(`🌍 Environment : ${env.NODE_ENV}`);
-  console.log(`🔗 Frontend URL: ${env.FRONTEND_URL}`);
-  console.log(`📄 Halaman Login: ${env.FRONTEND_URL}/login.html`);
-  console.log('======================================================');
-});
-
-// Graceful Shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM signal received: closing HTTP server');
-  server.close(() => {
-    console.log('HTTP server closed');
+// 9. Start Server (Only when not running in Vercel serverless environment)
+if (!process.env.VERCEL) {
+  const server = app.listen(env.PORT, () => {
+    console.log('======================================================');
+    console.log(`🚀 Server Autentikasi berjalan di PORT: ${env.PORT}`);
+    console.log(`🌍 Environment : ${env.NODE_ENV}`);
+    console.log(`🔗 Frontend URL: ${env.FRONTEND_URL}`);
+    console.log(`📄 Portal RAB: ${env.FRONTEND_URL}/index.html`);
+    console.log('======================================================');
   });
-});
+
+  // Graceful Shutdown
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM signal received: closing HTTP server');
+    server.close(() => {
+      console.log('HTTP server closed');
+    });
+  });
+}
 
 module.exports = app;

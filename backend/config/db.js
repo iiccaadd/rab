@@ -28,7 +28,9 @@ pool.on('error', () => {
 });
 
 // Fallback Local Storage Helper
-const localDbFile = path.resolve(__dirname, '../database/local_db.json');
+const localDbFile = process.env.VERCEL
+  ? path.join('/tmp', 'local_db.json')
+  : path.resolve(__dirname, '../database/local_db.json');
 
 function getLocalData() {
   if (!fs.existsSync(localDbFile)) {
@@ -46,7 +48,9 @@ function getLocalData() {
       tokens: [],
       preferences: [],
     };
-    fs.writeFileSync(localDbFile, JSON.stringify(initial, null, 2), 'utf8');
+    try {
+      fs.writeFileSync(localDbFile, JSON.stringify(initial, null, 2), 'utf8');
+    } catch (e) {}
     return initial;
   }
   try {
@@ -57,7 +61,9 @@ function getLocalData() {
 }
 
 function saveLocalData(data) {
-  fs.writeFileSync(localDbFile, JSON.stringify(data, null, 2), 'utf8');
+  try {
+    fs.writeFileSync(localDbFile, JSON.stringify(data, null, 2), 'utf8');
+  } catch (e) {}
 }
 
 /**
