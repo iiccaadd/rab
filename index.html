@@ -517,12 +517,12 @@
       <!-- =================================================================== -->
       <section id="view_scurve" class="view-section">
         
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
-          <div>
+        <div class="view-header">
+          <div class="view-header-content">
             <h2 class="view-title">Dashboard Kurva S Pelaksanaan &amp; Evaluasi Deviasi Proyek</h2>
             <p class="view-subtitle">Grafik integrasi bobot rencana mingguan (dari Jadwal &amp; RAB) vs capaian fisik lapangan, evaluasi deviasi, dan peringatan dini Show Cause Meeting (SCM).</p>
           </div>
-          <div style="display: flex; gap: 0.5rem;">
+          <div class="view-actions">
             <button class="btn btn-secondary btn-sm" onclick="window.siproApp.switchView('schedule')">
               <svg class="icon-svg" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
               <span>Sesuaikan Jadwal Kerja</span>
@@ -627,12 +627,12 @@
       <!-- =================================================================== -->
       <section id="view_rab" class="view-section">
         
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
-          <div>
-            <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main);">Rencana Anggaran Biaya (RAB) Konstruksi</h2>
-            <p style="font-size: 0.85rem; color: var(--text-muted);">Penyusunan hierarkis WBS divisi pekerjaan, kalkulasi otomatis harga satuan AHSP 2026, dan distribusi bobot persentase.</p>
+        <div class="view-header">
+          <div class="view-header-content">
+            <h2 class="view-title">Rencana Anggaran Biaya (RAB) Konstruksi</h2>
+            <p class="view-subtitle">Penyusunan hierarkis WBS divisi pekerjaan, kalkulasi otomatis harga satuan AHSP 2026, dan distribusi bobot persentase.</p>
           </div>
-          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <div class="view-actions">
             <button class="btn btn-secondary" id="btnAddDivision">
               <svg class="icon-svg" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
               <span>Tambah Kelompok Divisi</span>
@@ -662,12 +662,12 @@
       <!-- VIEW 4: BOQ VOLUME CALCULATOR & CUSTOM FORMULA ENGINE              -->
       <!-- =================================================================== -->
       <section id="view_boq" class="view-section">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
-          <div>
-            <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main);">Kalkulator Volume Pekerjaan (BOQ Take-Off Engine)</h2>
-            <p style="font-size: 0.85rem; color: var(--text-muted);">Gunakan kumpulan 40+ rumus geometris standar lengkap (Persiapan s/d MEP) atau buat rumus kustom Anda sendiri untuk menghitung volume pekerjaan dan menerapkannya langsung ke RAB &amp; Backup Sheet.</p>
+        <div class="view-header">
+          <div class="view-header-content">
+            <h2 class="view-title">Kalkulator Volume Pekerjaan (BOQ Take-Off Engine)</h2>
+            <p class="view-subtitle">Gunakan kumpulan 40+ rumus geometris standar lengkap (Persiapan s/d MEP) atau buat rumus kustom Anda sendiri untuk menghitung volume pekerjaan dan menerapkannya langsung ke RAB &amp; Backup Sheet.</p>
           </div>
-          <div style="display: flex; gap: 0.5rem;">
+          <div class="view-actions">
             <button class="btn btn-primary" id="btnOpenCustomFormulaModal">
               <svg class="icon-svg" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
               <span>Buat Rumus Kustom Sendiri</span>
@@ -775,14 +775,14 @@
       <!-- =================================================================== -->
       <section id="view_database" class="view-section">
         
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
-          <div>
+        <div class="view-header">
+          <div class="view-header-content">
             <h2 class="view-title">Master Database AHSP &amp; Harga Satuan 2026</h2>
             <p class="view-subtitle">Database Lengkap 3.170 Item Analisa Harga Satuan Cipta Karya (SE Bina Konstruksi No 47 Tahun 2026). Dilengkapi fitur pencarian instan, filter divisi, dan pengeditan harga satuan.</p>
           </div>
-          <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
-            <input type="text" id="dbSearchInput" class="form-input" placeholder="Cari item, nama atau kode AHSP..." style="width: 280px;">
-            <select id="dbDivisionFilter" class="form-select" style="min-width: 240px; max-width: 320px;">
+          <div class="view-actions">
+            <input type="text" id="dbSearchInput" class="form-input" placeholder="Cari item, nama atau kode AHSP..." style="width: 260px;">
+            <select id="dbDivisionFilter" class="form-select" style="min-width: 220px; max-width: 300px;">
               <option value="">Semua Divisi / Bidang Pekerjaan</option>
             </select>
             <button class="btn btn-secondary btn-sm" id="btnResetAhspDb" title="Muat Ulang Database Standar">
@@ -836,12 +836,12 @@
       <!-- =================================================================== -->
       <section id="view_schedule" class="view-section">
         
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
-          <div>
+        <div class="view-header">
+          <div class="view-header-content">
             <h2 class="view-title">Jadwal Pelaksanaan &amp; Distribusi Bobot Mingguan (Time Schedule / Gantt)</h2>
             <p class="view-subtitle">Matriks pembagian bobot rencana pekerjaan per minggu, kontrol durasi proyek, periode mulai/selesai per item, dan akumulasi kurva rencana.</p>
           </div>
-          <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+          <div class="view-actions">
             <div style="display: flex; align-items: center; gap: 0.4rem; background: #f8fafc; padding: 0.35rem 0.75rem; border-radius: 6px; border: 1px solid #cbd5e1;">
               <span style="font-size: 0.85rem; font-weight: 600; color: #475569;">Durasi Proyek:</span>
               <input type="number" id="scheduleDurationWeeksInput" class="form-input font-mono font-bold" min="1" max="52" style="width: 65px; text-align: center; padding: 0.2rem 0.4rem;">
@@ -860,22 +860,22 @@
 
         <!-- Schedule Summary Statistics Cards -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
-          <div class="card" style="padding: 1rem; border-left: 4px solid var(--primary-600);">
+          <div class="card" style="padding: 1rem; border-left: 4px solid var(--primary-600); margin-bottom: 0;">
             <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Total Durasi Waktu</div>
             <div style="font-size: 1.35rem; font-weight: 800; font-family: var(--font-mono); color: var(--text-main);" id="schedStatDuration">16 Minggu</div>
             <div style="font-size: 0.8rem; color: #64748b;" id="schedStatDays">112 Hari Kalender</div>
           </div>
-          <div class="card" style="padding: 1rem; border-left: 4px solid var(--accent-emerald);">
+          <div class="card" style="padding: 1rem; border-left: 4px solid var(--accent-emerald); margin-bottom: 0;">
             <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Item Pekerjaan Terjadwal</div>
             <div style="font-size: 1.35rem; font-weight: 800; font-family: var(--font-mono); color: var(--accent-emerald);" id="schedStatItemCount">14 Item</div>
             <div style="font-size: 0.8rem; color: #64748b;">Tersebar di seluruh divisi</div>
           </div>
-          <div class="card" style="padding: 1rem; border-left: 4px solid #38bdf8;">
+          <div class="card" style="padding: 1rem; border-left: 4px solid #38bdf8; margin-bottom: 0;">
             <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Total Bobot Rencana</div>
             <div style="font-size: 1.35rem; font-weight: 800; font-family: var(--font-mono); color: #0284c7;" id="schedStatTotalWeight">100.00%</div>
             <div style="font-size: 0.8rem; color: #64748b;">Sesuai nilai RAB Kontrak</div>
           </div>
-          <div class="card" style="padding: 1rem; border-left: 4px solid #f59e0b;">
+          <div class="card" style="padding: 1rem; border-left: 4px solid #f59e0b; margin-bottom: 0;">
             <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Puncak Beban Mingguan (Peak)</div>
             <div style="font-size: 1.35rem; font-weight: 800; font-family: var(--font-mono); color: #d97706;" id="schedStatPeakWeek">Minggu ke-4</div>
             <div style="font-size: 0.8rem; color: #64748b;" id="schedStatPeakWeight">Bobot: 18.15%</div>
@@ -916,9 +916,11 @@
       <!-- =================================================================== -->
       <section id="view_cashflow" class="view-section">
         
-        <div style="margin-bottom: 1.25rem;">
-          <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main);">Proyeksi Arus Kas &amp; Rencana Pembayaran Termijn (MC)</h2>
-          <p style="font-size: 0.85rem; color: var(--text-muted);">Jadwal pencairan tagihan bulanan (Monthly Certificate / MC), pengembalian uang muka, dan jaminan retensi pemeliharaan.</p>
+        <div class="view-header">
+          <div class="view-header-content">
+            <h2 class="view-title">Proyeksi Arus Kas &amp; Rencana Pembayaran Termijn (MC)</h2>
+            <p class="view-subtitle">Jadwal pencairan tagihan bulanan (Monthly Certificate / MC), pengembalian uang muka, dan jaminan retensi pemeliharaan.</p>
+          </div>
         </div>
 
         <div class="card">
@@ -1128,15 +1130,17 @@
       <!-- VIEW 9: PENGATURAN AKUN & MANAJEMEN SISTEM                          -->
       <!-- =================================================================== -->
       <section id="view_settings" class="view-section">
-        <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
-          <div>
-            <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--slate-900);">Pengaturan Akun &amp; Profil</h1>
-            <p style="font-size: 0.875rem; color: var(--slate-500);">Kelola profil, keamanan, sesi perangkat, notifikasi, dan persetujuan pengguna</p>
+        <div class="view-header">
+          <div class="view-header-content">
+            <h2 class="view-title">Pengaturan Akun &amp; Profil</h2>
+            <p class="view-subtitle">Kelola profil, keamanan, sesi perangkat, notifikasi, dan persetujuan pengguna</p>
           </div>
-          <button type="button" class="btn btn-secondary" data-view="dashboard" style="width: auto; padding: 0.45rem 1rem; font-size: 0.825rem; display: inline-flex; align-items: center; gap: 0.4rem;">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-            <span>Kembali ke Dashboard</span>
-          </button>
+          <div class="view-actions">
+            <button type="button" class="btn btn-secondary" data-view="dashboard" style="width: auto; padding: 0.45rem 1rem; font-size: 0.825rem; display: inline-flex; align-items: center; gap: 0.4rem;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+              <span>Kembali ke Dashboard</span>
+            </button>
+          </div>
         </div>
 
         <div id="settingsGlobalAlert" class="alert" style="display: none; margin-bottom: 1.25rem;"></div>

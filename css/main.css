@@ -681,7 +681,7 @@ svg, .icon-svg, .icon-svg-lg, .icon-svg-sm {
   margin: 0 auto;
 }
 
-/* View Section Switching */
+/* View Section Switching & Layout */
 .view-section {
   display: none;
   animation: fadeIn 0.2s ease-in-out;
@@ -689,6 +689,45 @@ svg, .icon-svg, .icon-svg-lg, .icon-svg-sm {
 
 .view-section.active {
   display: block;
+}
+
+/* Standardized View Header */
+.view-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.35rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-bottom: 0.5rem;
+}
+
+.view-header-content {
+  flex: 1;
+  min-width: 260px;
+}
+
+.view-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  margin-bottom: 0.25rem;
+}
+
+.view-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+  max-width: 950px;
+}
+
+.view-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 @keyframes fadeIn {

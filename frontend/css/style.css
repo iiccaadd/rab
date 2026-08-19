@@ -549,12 +549,28 @@ body {
   display: grid;
   grid-template-columns: 240px 1fr;
   gap: 1.5rem;
-  margin-top: 1.5rem;
+  margin-top: 1rem;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 860px) {
   .settings-layout {
     grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .settings-sidebar {
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    padding: 0.5rem !important;
+    gap: 0.5rem !important;
+  }
+  
+  .settings-tab-btn {
+    white-space: nowrap !important;
+    width: auto !important;
+    padding: 0.6rem 0.85rem !important;
+    flex-shrink: 0;
   }
 }
 
