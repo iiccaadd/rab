@@ -339,21 +339,29 @@
 
       <!-- SIDEBAR FOOTER & TOOL BUTTONS -->
       <div class="sidebar-footer no-print">
-        <div class="sidebar-actions-grid">
+        <div class="sidebar-actions-grid" style="grid-template-columns: repeat(3, 1fr); gap: 0.35rem;">
+          <button class="btn btn-primary btn-xs" id="btnSidebarNewProject" title="Buat Lembar Proyek Baru (Lembar Kosong)" data-tooltip="+ Proyek Baru">
+            <svg class="icon-svg-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>+ Baru</span>
+          </button>
+          <button class="btn btn-secondary btn-xs" id="btnSidebarProjectList" title="Daftar & Manajemen Proyek Tersimpan" data-tooltip="Daftar Proyek">
+            <svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+            <span>Proyek</span>
+          </button>
           <button class="btn btn-secondary btn-xs" id="btnExportJson" title="Simpan Cadangan File Proyek" data-tooltip="Backup File Proyek">
             <svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
             <span>Backup</span>
           </button>
-          <button class="btn btn-secondary btn-xs" id="btnImportJson" title="Buka File Proyek Tersimpan" data-tooltip="Buka File Proyek">
-            <svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-            <span>Buka</span>
+          <button class="btn btn-secondary btn-xs" id="btnImportJson" title="Buka File JSON Cadangan" data-tooltip="Buka Cadangan JSON">
+            <svg class="icon-svg-sm" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            <span>Import</span>
           </button>
           <input type="file" id="inputImportJson" accept=".json" style="display: none;">
-          <button class="btn btn-secondary btn-xs" id="btnResetProject" title="Muat Contoh Proyek Standar" data-tooltip="Reset Data Standar">
+          <button class="btn btn-secondary btn-xs" id="btnResetProject" title="Muat Contoh Proyek Standar PUPR" data-tooltip="Reset Data Standar">
             <svg class="icon-svg-sm" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
             <span>Reset</span>
           </button>
-          <button class="btn btn-primary btn-xs" id="btnPrint" title="Cetak Format Dokumen Laporan" data-tooltip="Cetak Dokumen Laporan">
+          <button class="btn btn-secondary btn-xs" id="btnPrint" title="Cetak Format Dokumen Laporan" data-tooltip="Cetak Dokumen Laporan">
             <svg class="icon-svg-sm" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
             <span>Cetak</span>
           </button>
@@ -379,9 +387,17 @@
               <line x1="3" y1="18" x2="21" y2="18"></line>
             </svg>
           </button>
-          <div class="topbar-info">
+          <div class="topbar-info" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
             <span class="topbar-chip">Wilayah: <strong id="topbarRegionName">Muara Teweh (Kab. Barito Utara)</strong></span>
-            <span class="topbar-chip">Proyek: <strong id="topbarProjectName">PEMBANGUNAN KANTOR BPD</strong></span>
+            <button type="button" class="topbar-chip topbar-project-btn" id="btnTopProjectManager" title="Buka Daftar / Ganti Proyek" style="cursor: pointer; background: #ffffff; border: 1px solid #cbd5e1; display: inline-flex; align-items: center; gap: 0.4rem; font-family: inherit;">
+              <svg class="icon-svg-sm" viewBox="0 0 24 24" style="color: var(--primary-600);"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+              <span>Proyek: <strong id="topbarProjectName">PEMBANGUNAN KANTOR BPD</strong></span>
+              <svg class="icon-svg-xs" viewBox="0 0 24 24" style="color: #64748b; width: 12px; height: 12px;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <button type="button" class="btn btn-success btn-xs" id="btnTopNewProject" title="Buat Lembar Proyek Baru (Proyek saat ini otomatis tersimpan)" style="font-weight: 700;">
+              <svg class="icon-svg-xs" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              <span>+ Proyek Baru</span>
+            </button>
           </div>
         </div>
         <div class="topbar-right">
@@ -456,15 +472,25 @@
         
         <!-- Project Info Card -->
         <div class="card">
-          <div class="card-header">
+          <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
             <div>
               <h2 class="card-title">Informasi Proyek &amp; Lokasi Pekerjaan</h2>
               <p class="card-description">Ringkasan kontrak pelaksanaan proyek konstruksi aktif.</p>
             </div>
-            <button class="btn btn-secondary btn-sm" id="btnEditProjectInfo">
-              <svg class="icon-svg" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-              <span>Ubah Data Proyek</span>
-            </button>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <button class="btn btn-secondary btn-sm" id="btnEditProjectInfo" title="Ubah Parameter Data Proyek Aktif">
+                <svg class="icon-svg" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                <span>Ubah Data Proyek</span>
+              </button>
+              <button class="btn btn-outline btn-sm" id="btnDashProjectManager" title="Daftar Semua Proyek Tersimpan">
+                <svg class="icon-svg" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                <span>Daftar Proyek</span>
+              </button>
+              <button class="btn btn-primary btn-sm" id="btnDashNewProject" title="Buat Lembar Proyek Baru (Proyek saat ini otomatis tersimpan)">
+                <svg class="icon-svg" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <span>+ Proyek Baru</span>
+              </button>
+            </div>
           </div>
           <div class="card-body">
             <div class="project-meta-grid">
@@ -1423,6 +1449,116 @@
   <!-- ===================================================================== -->
   <!-- MODALS                                                                -->
   <!-- ===================================================================== -->
+
+  <!-- Modal 0A: Buat Data Proyek Baru (Lembar Kerja Kosong) -->
+  <div class="modal-backdrop" id="modalCreateProject">
+    <div class="modal-dialog" style="max-width: 650px;">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Buat Data Proyek Baru</h3>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem;">Menyiapkan lembar kerja proyek baru. Proyek saat ini otomatis tersimpan ke arsip.</p>
+        </div>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <form id="formCreateProject">
+        <div class="modal-body">
+          <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-left: 4px solid var(--primary-600); border-radius: var(--radius-md); padding: 0.85rem 1rem; margin-bottom: 1.25rem; font-size: 0.825rem; color: #1e3a8a; display: flex; align-items: flex-start; gap: 0.65rem;">
+            <svg class="icon-svg-sm" style="color: var(--primary-600); flex-shrink: 0; margin-top: 2px;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            <div>
+              <strong>Penyimpanan Otomatis:</strong> Seluruh data RAB, jadwal, dan opname proyek yang sedang aktif saat ini akan <strong>disimpan otomatis</strong> ke daftar arsip proyek sehingga dapat Anda buka dan edit kembali kapan saja.
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label class="form-label">Nama Pekerjaan / Paket Proyek Baru: <span style="color: var(--rose-600);">*</span></label>
+              <input type="text" id="newProjNameInput" class="form-input font-bold" placeholder="Contoh: PEMBANGUNAN GEDUNG PUSKESMAS TAHAP 1" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Lokasi / Acuan Wilayah:</label>
+              <select id="newProjRegionSelect" class="form-select">
+                <option value="MUARA_TEWEH">Muara Teweh (Kab. Barito Utara)</option>
+                <option value="PALANGKA_RAYA">Kota Palangka Raya</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Tahun Anggaran:</label>
+              <input type="text" id="newProjYearInput" class="form-input font-mono" value="2026" required>
+            </div>
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label class="form-label">Program &amp; Kegiatan (Opsional):</label>
+              <input type="text" id="newProjProgramInput" class="form-input" placeholder="PROGRAM PENINGKATAN PRASARANA, SARANA, DAN UTILITAS UMUM (PSU)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Penyedia Jasa / Kontraktor:</label>
+              <input type="text" id="newProjContractorInput" class="form-input" placeholder="CV. KONTRAKTOR PELAKSANA">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Konsultan Pengawas:</label>
+              <input type="text" id="newProjConsultantInput" class="form-input" placeholder="CV. KONSULTAN PENGAWAS">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Target Durasi (Minggu):</label>
+              <input type="number" id="newProjDurationInput" class="form-input font-mono font-bold" min="1" max="52" value="16" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">PPN (%):</label>
+              <input type="number" id="newProjPpnInput" class="form-input font-mono font-bold" min="0" max="20" value="11" required>
+            </div>
+            <div class="form-group" style="grid-column: 1 / -1; margin-top: 0.5rem; background: #f8fafc; padding: 0.85rem; border-radius: var(--radius-md); border: 1px solid #e2e8f0;">
+              <label class="form-label" style="font-weight: 700; color: #0f172a; margin-bottom: 0.5rem;">Struktur Awal Lembar RAB:</label>
+              <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.85rem;">
+                  <input type="radio" name="newProjStructureOption" value="empty" checked style="accent-color: var(--primary-600);">
+                  <span><strong>Lembar RAB Kosong Murni</strong> (Anda bebas menambah kelompok divisi sendiri)</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.85rem;">
+                  <input type="radio" name="newProjStructureOption" value="template" style="accent-color: var(--primary-600);">
+                  <span><strong>Template 4 Kelompok Divisi Standar PUPR</strong> (Div. I Persiapan, Div. II Pondasi &amp; Struktur, Div. III Dinding &amp; Lantai, Div. IV Atap &amp; Plafon — kosong tanpa item)</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-modal-cancel">Batal</button>
+          <button type="submit" class="btn btn-success" id="btnSubmitNewProject" style="font-weight: 700;">
+            <svg class="icon-svg-sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span>Buat Lembar Proyek Baru</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 0B: Daftar & Manajemen Proyek Tersimpan -->
+  <div class="modal-backdrop" id="modalProjectManager">
+    <div class="modal-dialog" style="max-width: 800px;">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Manajemen &amp; Daftar Proyek Tersimpan</h3>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem;">Pilih proyek untuk dibuka dan diedit, buat cadangan, atau duplikat proyek.</p>
+        </div>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 1.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap;">
+          <input type="text" id="projectManagerSearchInput" class="form-input" placeholder="Cari nama proyek, lokasi, atau tahun..." style="flex: 1; min-width: 220px;">
+          <button type="button" class="btn btn-primary btn-sm" id="btnModalOpenCreateProject" style="white-space: nowrap;">
+            <svg class="icon-svg-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>+ Buat Proyek Baru</span>
+          </button>
+        </div>
+
+        <div id="projectManagerListContainer" style="display: flex; flex-direction: column; gap: 0.75rem;">
+          <!-- Rendered dynamically by bundle.js -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-modal-cancel">Tutup</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Modal 1: Edit Informasi Proyek -->
   <div class="modal-backdrop" id="modalProjectInfo">

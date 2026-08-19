@@ -815,13 +815,56 @@
       };
     }
 
+    getSavedProjectsList() {
+      try {
+        const raw = localStorage.getItem('sipro_saved_projects_list_2026');
+        if (raw) {
+          const list = JSON.parse(raw);
+          if (Array.isArray(list) && list.length > 0) return list;
+        }
+      } catch (e) {
+        console.warn('Failed to parse saved projects list', e);
+      }
+      return [];
+    }
+
+    saveProjectsList(list) {
+      try {
+        localStorage.setItem('sipro_saved_projects_list_2026', JSON.stringify(list));
+      } catch (e) {
+        console.warn('Failed to save projects list', e);
+      }
+    }
+
+    syncToProjectsList(proj) {
+      if (!proj || !proj.info) return;
+      const projId = proj.id || proj.info.id || 'proj_default_2026';
+      proj.id = projId;
+      proj.info.id = projId;
+      proj.updatedAt = new Date().toISOString();
+
+      let list = this.getSavedProjectsList();
+      const idx = list.findIndex(p => p.id === projId || (p.info && p.info.id === projId));
+      if (idx >= 0) {
+        list[idx] = JSON.parse(JSON.stringify(proj));
+      } else {
+        list.unshift(JSON.parse(JSON.stringify(proj)));
+      }
+      this.saveProjectsList(list);
+    }
+
     loadProject() {
       const saved = localStorage.getItem(this.storageKey);
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
-          if (parsed && parsed.divisions && parsed.divisions.length > 0) {
+          if (parsed && parsed.info) {
+            if (!parsed.id) {
+              parsed.id = parsed.info.id || 'proj_default_2026';
+              parsed.info.id = parsed.id;
+            }
             this.recalculateProject(parsed);
+            this.syncToProjectsList(parsed);
             return parsed;
           }
         } catch (e) {
@@ -829,6 +872,8 @@
         }
       }
       const initial = this.getDefaultProject();
+      initial.id = 'proj_default_2026';
+      initial.info.id = 'proj_default_2026';
       this.recalculateProject(initial);
       this.saveProject(initial);
       return initial;
@@ -836,12 +881,116 @@
 
     saveProject(proj = null) {
       if (proj) this.project = proj;
+      if (!this.project.id) {
+        this.project.id = (this.project.info && this.project.info.id) || 'proj_' + Date.now();
+        if (this.project.info) this.project.info.id = this.project.id;
+      }
       this.recalculateProject(this.project);
       try {
         localStorage.setItem(this.storageKey, JSON.stringify(this.project));
+        this.syncToProjectsList(this.project);
       } catch (e) {
         console.warn('LocalStorage error saving project', e);
       }
+    }
+
+    createNewProject(options = {}) {
+      // 1. Auto-save current active project so it is preserved in the archive
+      this.saveProject();
+
+      // 2. Build new clean project
+      const newId = 'proj_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+      const newProj = {
+        id: newId,
+        info: {
+          id: newId,
+          name: (options.name || 'PROYEK KONSTRUKSI BARU').trim().toUpperCase(),
+          program: options.program || 'PROGRAM PENINGKATAN PRASARANA, SARANA, DAN UTILITAS UMUM (PSU)',
+          kegiatan: options.kegiatan || 'URUSAN PENYELENGGARAAN PSU PERUMAHAN',
+          location: options.location || 'KAB. BARITO UTARA',
+          year: options.year || '2026',
+          contractNo: options.contractNo || ('600/' + Math.floor(Math.random() * 90 + 10) + '.KONTRAK/DPUPR-CK/2026'),
+          contractor: options.contractor || 'CV. BARITO UTARA KONSTRUKSI',
+          consultant: options.consultant || 'CV. KONSULTAN TEKNIK KAL-TENG',
+          ppk: options.ppk || 'H. AHMAD RIFAI, ST., MT.',
+          nipPpk: options.nipPpk || '19780512 200501 1 008',
+          durationWeeks: parseInt(options.durationWeeks) || 16,
+          ppnPercent: parseFloat(options.ppnPercent) || 11,
+          region: options.region || 'MUARA_TEWEH',
+          createdAt: new Date().toISOString()
+        },
+        divisions: options.withDefaultStructure ? [
+          { id: 'div_1', code: 'DIV. I', name: 'PEKERJAAN PERSIAPAN & TANAH', items: [], subtotal: 0 },
+          { id: 'div_2', code: 'DIV. II', name: 'PEKERJAAN PONDASI & STRUKTUR BETON', items: [], subtotal: 0 },
+          { id: 'div_3', code: 'DIV. III', name: 'PEKERJAAN DINDING & LANTAI', items: [], subtotal: 0 },
+          { id: 'div_4', code: 'DIV. IV', name: 'PEKERJAAN ATAP & PLAFON', items: [], subtotal: 0 }
+        ] : [],
+        opnames: [],
+        totalDirectCost: 0,
+        ppnAmount: 0,
+        grandTotal: 0
+      };
+
+      this.project = newProj;
+      this.saveProject(newProj);
+      return newProj;
+    }
+
+    openSavedProject(projId) {
+      // 1. Auto-save current project before switching
+      this.saveProject();
+
+      // 2. Find target project in saved list
+      const list = this.getSavedProjectsList();
+      const found = list.find(p => p.id === projId || (p.info && p.info.id === projId));
+      if (!found) return null;
+
+      this.project = JSON.parse(JSON.stringify(found));
+      this.recalculateProject(this.project);
+      this.saveProject(this.project);
+      return this.project;
+    }
+
+    duplicateProject(projId) {
+      this.saveProject();
+      const list = this.getSavedProjectsList();
+      const orig = list.find(p => p.id === projId || (p.info && p.info.id === projId)) || this.project;
+      const clone = JSON.parse(JSON.stringify(orig));
+      const newId = 'proj_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+      clone.id = newId;
+      if (clone.info) {
+        clone.info.id = newId;
+        clone.info.name = '[Salinan] ' + clone.info.name;
+        clone.info.createdAt = new Date().toISOString();
+      }
+      this.recalculateProject(clone);
+      list.unshift(clone);
+      this.saveProjectsList(list);
+      return clone;
+    }
+
+    deleteSavedProject(projId) {
+      let list = this.getSavedProjectsList();
+      list = list.filter(p => p.id !== projId && (!p.info || p.info.id !== projId));
+      if (list.length === 0) {
+        const def = this.getDefaultProject();
+        def.id = 'proj_default_2026';
+        def.info.id = 'proj_default_2026';
+        list.push(def);
+        this.saveProjectsList(list);
+        this.project = def;
+        this.saveProject(def);
+        return def;
+      }
+      this.saveProjectsList(list);
+
+      // If active was deleted, switch to the first remaining project
+      if (this.project.id === projId || (this.project.info && this.project.info.id === projId)) {
+        this.project = list[0];
+        this.recalculateProject(this.project);
+        this.saveProject(this.project);
+      }
+      return this.project;
     }
 
     recalculateProject(proj = null) {
@@ -3992,6 +4141,60 @@
         });
       }
 
+      // Project Management & Switcher Events
+      const btnTopProjMgr = document.getElementById('btnTopProjectManager');
+      if (btnTopProjMgr) {
+        btnTopProjMgr.addEventListener('click', () => this.openProjectManagerModal());
+      }
+
+      const btnTopNewProj = document.getElementById('btnTopNewProject');
+      if (btnTopNewProj) {
+        btnTopNewProj.addEventListener('click', () => this.openCreateProjectModal());
+      }
+
+      const btnSidebarNewProj = document.getElementById('btnSidebarNewProject');
+      if (btnSidebarNewProj) {
+        btnSidebarNewProj.addEventListener('click', () => this.openCreateProjectModal());
+      }
+
+      const btnSidebarProjList = document.getElementById('btnSidebarProjectList');
+      if (btnSidebarProjList) {
+        btnSidebarProjList.addEventListener('click', () => this.openProjectManagerModal());
+      }
+
+      const btnDashProjMgr = document.getElementById('btnDashProjectManager');
+      if (btnDashProjMgr) {
+        btnDashProjMgr.addEventListener('click', () => this.openProjectManagerModal());
+      }
+
+      const btnDashNewProj = document.getElementById('btnDashNewProject');
+      if (btnDashNewProj) {
+        btnDashNewProj.addEventListener('click', () => this.openCreateProjectModal());
+      }
+
+      const btnModalOpenNew = document.getElementById('btnModalOpenCreateProject');
+      if (btnModalOpenNew) {
+        btnModalOpenNew.addEventListener('click', () => {
+          this.closeModal('modalProjectManager');
+          this.openCreateProjectModal();
+        });
+      }
+
+      const formCreateProj = document.getElementById('formCreateProject');
+      if (formCreateProj) {
+        formCreateProj.addEventListener('submit', (e) => {
+          e.preventDefault();
+          this.submitCreateProjectForm();
+        });
+      }
+
+      const searchProjInput = document.getElementById('projectManagerSearchInput');
+      if (searchProjInput) {
+        searchProjInput.addEventListener('input', (e) => {
+          this.renderProjectManagerList(e.target.value);
+        });
+      }
+
       const btnEditProj = document.getElementById('btnEditProjectInfo');
       if (btnEditProj) {
         btnEditProj.addEventListener('click', () => this.openProjectInfoModal());
@@ -4002,6 +4205,95 @@
         formProjInfo.addEventListener('submit', (e) => {
           e.preventDefault();
           this.saveProjectInfoForm();
+        });
+      }
+
+      // Export / Import / Reset / Print Tools
+      const btnExportJson = document.getElementById('btnExportJson');
+      if (btnExportJson) {
+        btnExportJson.addEventListener('click', () => {
+          this.handleExportSavedProject(this.rabEngine.project.id);
+        });
+      }
+
+      const btnImportJson = document.getElementById('btnImportJson');
+      const inputImportJson = document.getElementById('inputImportJson');
+      if (btnImportJson && inputImportJson) {
+        btnImportJson.addEventListener('click', () => inputImportJson.click());
+        inputImportJson.addEventListener('change', (e) => {
+          if (e.target.files && e.target.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (re) => {
+              try {
+                const parsed = JSON.parse(re.target.result);
+                if (parsed && parsed.info) {
+                  if (!parsed.id) parsed.id = 'proj_' + Date.now();
+                  if (parsed.info) parsed.info.id = parsed.id;
+                  this.rabEngine.recalculateProject(parsed);
+                  this.rabEngine.project = parsed;
+                  this.rabEngine.saveProject(parsed);
+                  this.render();
+                  this.showToast('Proyek berhasil diimpor dan dimuat!');
+                } else {
+                  alert('Format file JSON proyek tidak valid.');
+                }
+              } catch (err) {
+                alert('Gagal membaca file JSON: ' + err.message);
+              }
+              inputImportJson.value = '';
+            };
+            reader.readAsText(e.target.files[0]);
+          }
+        });
+      }
+
+      const btnResetProj = document.getElementById('btnResetProject');
+      if (btnResetProj) {
+        btnResetProj.addEventListener('click', () => {
+          if (confirm('Apakah Anda ingin memuat data proyek acuan standar PUPR? Data proyek saat ini akan tetap tersimpan di arsip.')) {
+            this.rabEngine.saveProject();
+            const def = this.rabEngine.getDefaultProject();
+            def.id = 'proj_default_' + Date.now();
+            def.info.id = def.id;
+            def.info.name = 'PEMBANGUNAN KANTOR BPD (STANDAR PUPR)';
+            this.rabEngine.recalculateProject(def);
+            this.rabEngine.project = def;
+            this.rabEngine.saveProject(def);
+            this.render();
+            this.showToast('Contoh proyek standar PUPR berhasil dimuat!');
+          }
+        });
+      }
+
+      const btnPrint = document.getElementById('btnPrint');
+      if (btnPrint) {
+        btnPrint.addEventListener('click', () => {
+          window.print();
+        });
+      }
+
+      const btnExportRabCsv = document.getElementById('btnExportRabCsv');
+      if (btnExportRabCsv) {
+        btnExportRabCsv.addEventListener('click', () => {
+          const p = this.rabEngine.project;
+          let csv = 'No WBS,Uraian Pekerjaan,Kode AHSP,Volume,Satuan,Harga Satuan (Rp),Total Harga (Rp),Bobot (%)\r\n';
+          (p.divisions || []).forEach(div => {
+            csv += `"${div.code}","${div.name.replace(/"/g, '""')}","",,"","","${div.subtotal}","${div.weight.toFixed(2)}%"\r\n`;
+            (div.items || []).forEach(it => {
+              csv += `"${it.wbsCode}","${it.name.replace(/"/g, '""')}","${it.ahspCode}","${it.volume}","${it.unit}","${it.unitPrice}","${it.totalPrice}","${it.weight.toFixed(2)}%"\r\n`;
+            });
+          });
+          csv += `"","TOTAL BIAYA LANGSUNG","","","","","${p.totalDirectCost}","100.00%"\r\n`;
+          csv += `"","PPN (${p.info.ppnPercent}%)","","","","","${p.ppnAmount}",""\r\n`;
+          csv += `"","TOTAL NILAI KONTRAK","","","","","${p.grandTotal}",""\r\n`;
+
+          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.setAttribute('href', url);
+          a.setAttribute('download', `RAB_${(p.info.name || 'Proyek').replace(/\s+/g, '_')}_2026.csv`);
+          a.click();
+          this.showToast('RAB berhasil diekspor ke format CSV');
         });
       }
 
@@ -4467,72 +4759,94 @@
       if (!container) return;
 
       let html = '';
-      p.divisions.forEach(div => {
-        let itemsHtml = '';
-        div.items.forEach((it) => {
-          itemsHtml += '<tr>' +
-            '<td class="text-center font-mono" style="font-size:0.8rem;">' + it.wbsCode + '</td>' +
-            '<td>' +
-            '<div style="font-weight:600; color:var(--text-main);">' + it.name + '</div>' +
-            '<div style="font-size:0.75rem; color:#64748b;">' +
-            'AHSP: <span class="font-mono" style="color:#0284c7; cursor:pointer;" onclick="window.siproApp.openAhspDetailModal(\'' + it.ahspCode + '\')">' + it.ahspCode + '</span>' +
-            (it.boq_backup && it.boq_backup.steps ? ' &bull; <span style="color:#166534;">' + it.boq_backup.steps + '</span>' : '') +
-            '</div>' +
-            '</td>' +
-            '<td class="text-center">' +
-            '<div style="display:flex; align-items:center; justify-content:center; gap:0.25rem;">' +
-            '<button class="btn btn-secondary btn-rab-vol-minus" data-div-id="' + div.id + '" data-item-id="' + it.id + '" style="padding:0.15rem 0.4rem; font-size:0.7rem;" title="Kurangi Volume">-</button>' +
-            '<span class="font-mono font-bold" style="min-width:45px; text-align:center;">' + Utils.formatNumber(it.volume, 2) + '</span>' +
-            '<button class="btn btn-secondary btn-rab-vol-plus" data-div-id="' + div.id + '" data-item-id="' + it.id + '" style="padding:0.15rem 0.4rem; font-size:0.7rem;" title="Tambah Volume">+</button>' +
-            '</div>' +
-            '</td>' +
-            '<td class="text-center font-mono">' + Utils.formatUnitBadge(it.unit) + '</td>' +
-            '<td class="text-right font-mono">' + Utils.formatRupiah(it.unitPrice) + '</td>' +
-            '<td class="text-right font-mono font-bold">' + Utils.formatRupiah(it.totalPrice) + '</td>' +
-            '<td class="text-right font-mono" style="color:#0284c7;">' + it.weight.toFixed(2) + '%</td>' +
-            '<td class="text-center">' +
-            '<button class="btn btn-secondary btn-rab-delete-item" data-div-id="' + div.id + '" data-item-id="' + it.id + '" style="padding:0.2rem 0.45rem; color:#dc2626;" title="Hapus Item">' + Icons.trash + '</button>' +
-            '</td>' +
-            '</tr>';
-        });
-
-        html += '<div class="card" style="margin-bottom: 1.25rem;">' +
-          '<div class="card-header" style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; flex-wrap:wrap; gap:0.5rem;">' +
-          '<div>' +
-          '<span class="badge badge-primary">' + div.code + '</span>' +
-          '<strong style="margin-left:0.5rem; font-size:0.95rem; color:var(--text-main);">' + div.name + '</strong>' +
+      if (!p.divisions || p.divisions.length === 0) {
+        html = '<div class="card" style="text-align:center; padding:3.5rem 1.5rem; background:#f8fafc; border:2px dashed #cbd5e1; border-radius:var(--radius-lg);">' +
+          '<div style="width:56px; height:56px; background:#e0f2fe; color:var(--primary-600); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1rem auto;">' +
+          '<svg class="icon-svg" style="width:28px; height:28px;" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>' +
           '</div>' +
-          '<div style="display:flex; gap:0.5rem; align-items:center;">' +
-          '<span class="font-mono font-bold" style="font-size:0.95rem; color:#0f172a;">' + Utils.formatRupiah(div.subtotal) + ' (' + div.weight.toFixed(2) + '%)</span>' +
-          '<button class="btn btn-secondary btn-sm btn-rab-add-item-to-div" data-div-id="' + div.id + '">' +
-          Icons.plus + '<span>Tambah Item</span>' +
+          '<h3 style="font-size:1.15rem; font-weight:800; color:#0f172a; margin-bottom:0.35rem;">Lembar Kerja RAB Masih Kosong</h3>' +
+          '<p style="color:#64748b; font-size:0.875rem; max-width:480px; margin:0 auto 1.5rem auto;">Proyek baru telah disiapkan sebagai lembar kerja kosong. Silakan tambahkan kelompok divisi pekerjaan (misal: Divisi I Pekerjaan Persiapan, Divisi II Pondasi & Struktur, dll) untuk mulai menyusun RAB.</p>' +
+          '<button type="button" class="btn btn-primary" id="btnEmptyRabAddDiv" style="font-weight:700; padding:0.6rem 1.25rem;">' +
+          '<svg class="icon-svg-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>' +
+          '<span>+ Tambah Kelompok Divisi Pertama</span>' +
           '</button>' +
-          '<button class="btn btn-secondary btn-sm btn-rab-del-div" data-div-id="' + div.id + '" style="color:#dc2626;" title="Hapus Divisi">' + Icons.trash + '</button>' +
-          '</div>' +
-          '</div>' +
-          '<div class="table-wrapper">' +
-          '<table class="data-table">' +
-          '<thead>' +
-          '<tr>' +
-          '<th style="width:55px;" class="text-center">WBS</th>' +
-          '<th>Uraian Pekerjaan & Analisa AHSP</th>' +
-          '<th style="width:130px;" class="text-center">Volume</th>' +
-          '<th style="width:65px;" class="text-center">Sat</th>' +
-          '<th style="width:135px;" class="text-right">Harga Satuan</th>' +
-          '<th style="width:150px;" class="text-right">Total Harga</th>' +
-          '<th style="width:75px;" class="text-right">Bobot</th>' +
-          '<th style="width:65px;" class="text-center">Aksi</th>' +
-          '</tr>' +
-          '</thead>' +
-          '<tbody>' +
-          (itemsHtml || '<tr><td colspan="8" class="text-center" style="padding:1.5rem; color:#94a3b8;">Belum ada item pekerjaan di divisi ini. Klik "Tambah Item" untuk menambahkan.</td></tr>') +
-          '</tbody>' +
-          '</table>' +
-          '</div>' +
           '</div>';
-      });
+      } else {
+        p.divisions.forEach(div => {
+          let itemsHtml = '';
+          div.items.forEach((it) => {
+            itemsHtml += '<tr>' +
+              '<td class="text-center font-mono" style="font-size:0.8rem;">' + it.wbsCode + '</td>' +
+              '<td>' +
+              '<div style="font-weight:600; color:var(--text-main);">' + it.name + '</div>' +
+              '<div style="font-size:0.75rem; color:#64748b;">' +
+              'AHSP: <span class="font-mono" style="color:#0284c7; cursor:pointer;" onclick="window.siproApp.openAhspDetailModal(\'' + it.ahspCode + '\')">' + it.ahspCode + '</span>' +
+              (it.boq_backup && it.boq_backup.steps ? ' &bull; <span style="color:#166534;">' + it.boq_backup.steps + '</span>' : '') +
+              '</div>' +
+              '</td>' +
+              '<td class="text-center">' +
+              '<div style="display:flex; align-items:center; justify-content:center; gap:0.25rem;">' +
+              '<button class="btn btn-secondary btn-rab-vol-minus" data-div-id="' + div.id + '" data-item-id="' + it.id + '" style="padding:0.15rem 0.4rem; font-size:0.7rem;" title="Kurangi Volume">-</button>' +
+              '<span class="font-mono font-bold" style="min-width:45px; text-align:center;">' + Utils.formatNumber(it.volume, 2) + '</span>' +
+              '<button class="btn btn-secondary btn-rab-vol-plus" data-div-id="' + div.id + '" data-item-id="' + it.id + '" style="padding:0.15rem 0.4rem; font-size:0.7rem;" title="Tambah Volume">+</button>' +
+              '</div>' +
+              '</td>' +
+              '<td class="text-center font-mono">' + Utils.formatUnitBadge(it.unit) + '</td>' +
+              '<td class="text-right font-mono">' + Utils.formatRupiah(it.unitPrice) + '</td>' +
+              '<td class="text-right font-mono font-bold">' + Utils.formatRupiah(it.totalPrice) + '</td>' +
+              '<td class="text-right font-mono" style="color:#0284c7;">' + it.weight.toFixed(2) + '%</td>' +
+              '<td class="text-center">' +
+              '<button class="btn btn-secondary btn-rab-delete-item" data-div-id="' + div.id + '" data-item-id="' + it.id + '" style="padding:0.2rem 0.45rem; color:#dc2626;" title="Hapus Item">' + Icons.trash + '</button>' +
+              '</td>' +
+              '</tr>';
+          });
+
+          html += '<div class="card" style="margin-bottom: 1.25rem;">' +
+            '<div class="card-header" style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; flex-wrap:wrap; gap:0.5rem;">' +
+            '<div>' +
+            '<span class="badge badge-primary">' + div.code + '</span>' +
+            '<strong style="margin-left:0.5rem; font-size:0.95rem; color:var(--text-main);">' + div.name + '</strong>' +
+            '</div>' +
+            '<div style="display:flex; gap:0.5rem; align-items:center;">' +
+            '<span class="font-mono font-bold" style="font-size:0.95rem; color:#0f172a;">' + Utils.formatRupiah(div.subtotal) + ' (' + div.weight.toFixed(2) + '%)</span>' +
+            '<button class="btn btn-secondary btn-sm btn-rab-add-item-to-div" data-div-id="' + div.id + '">' +
+            Icons.plus + '<span>Tambah Item</span>' +
+            '</button>' +
+            '<button class="btn btn-secondary btn-sm btn-rab-del-div" data-div-id="' + div.id + '" style="color:#dc2626;" title="Hapus Divisi">' + Icons.trash + '</button>' +
+            '</div>' +
+            '</div>' +
+            '<div class="table-wrapper">' +
+            '<table class="data-table">' +
+            '<thead>' +
+            '<tr>' +
+            '<th style="width:55px;" class="text-center">WBS</th>' +
+            '<th>Uraian Pekerjaan & Analisa AHSP</th>' +
+            '<th style="width:130px;" class="text-center">Volume</th>' +
+            '<th style="width:65px;" class="text-center">Sat</th>' +
+            '<th style="width:135px;" class="text-right">Harga Satuan</th>' +
+            '<th style="width:150px;" class="text-right">Total Harga</th>' +
+            '<th style="width:75px;" class="text-right">Bobot</th>' +
+            '<th style="width:65px;" class="text-center">Aksi</th>' +
+            '</tr>' +
+            '</thead>' +
+            '<tbody>' +
+            (itemsHtml || '<tr><td colspan="8" class="text-center" style="padding:1.5rem; color:#94a3b8;">Belum ada item pekerjaan di divisi ini. Klik "Tambah Item" untuk menambahkan.</td></tr>') +
+            '</tbody>' +
+            '</table>' +
+            '</div>' +
+            '</div>';
+        });
+      }
 
       container.innerHTML = html;
+
+      const btnEmptyAdd = document.getElementById('btnEmptyRabAddDiv');
+      if (btnEmptyAdd) {
+        btnEmptyAdd.addEventListener('click', () => {
+          const btnAddDiv = document.getElementById('btnAddDivision');
+          if (btnAddDiv) btnAddDiv.click();
+        });
+      }
 
       const recap = document.getElementById('rabRecapitulationShowcase');
       if (recap) {
@@ -5345,6 +5659,219 @@
     closeModal(modalId) {
       const el = document.getElementById(modalId);
       if (el) el.classList.remove('active');
+    }
+
+    openCreateProjectModal() {
+      const activeProj = this.rabEngine.project;
+      const newNameInput = document.getElementById('newProjNameInput');
+      if (newNameInput) newNameInput.value = '';
+      const yearInput = document.getElementById('newProjYearInput');
+      if (yearInput) yearInput.value = '2026';
+      const durInput = document.getElementById('newProjDurationInput');
+      if (durInput) durInput.value = '16';
+      const ppnInput = document.getElementById('newProjPpnInput');
+      if (ppnInput) ppnInput.value = '11';
+      const regionSelect = document.getElementById('newProjRegionSelect');
+      if (regionSelect && activeProj.info && activeProj.info.region) {
+        regionSelect.value = activeProj.info.region;
+      }
+      this.openModal('modalCreateProject');
+      setTimeout(() => { if (newNameInput) newNameInput.focus(); }, 80);
+    }
+
+    submitCreateProjectForm() {
+      const name = document.getElementById('newProjNameInput').value;
+      if (!name || !name.trim()) {
+        alert('Nama Paket Proyek harus diisi!');
+        return;
+      }
+
+      const region = document.getElementById('newProjRegionSelect').value || 'MUARA_TEWEH';
+      const year = document.getElementById('newProjYearInput').value || '2026';
+      const program = document.getElementById('newProjProgramInput').value || 'PROGRAM PENINGKATAN PRASARANA, SARANA, DAN UTILITAS UMUM (PSU)';
+      const contractor = document.getElementById('newProjContractorInput').value || 'CV. BARITO UTARA KONSTRUKSI';
+      const consultant = document.getElementById('newProjConsultantInput').value || 'CV. KONSULTAN TEKNIK KAL-TENG';
+      const durationWeeks = parseInt(document.getElementById('newProjDurationInput').value) || 16;
+      const ppnPercent = parseFloat(document.getElementById('newProjPpnInput').value) || 11;
+      
+      const structureOption = document.querySelector('input[name="newProjStructureOption"]:checked');
+      const withDefaultStructure = structureOption ? (structureOption.value === 'template') : false;
+
+      // 1. Create blank project (this auto-saves old project into the saved archive)
+      const newProj = this.rabEngine.createNewProject({
+        name,
+        region,
+        year,
+        program,
+        contractor,
+        consultant,
+        durationWeeks,
+        ppnPercent,
+        withDefaultStructure
+      });
+
+      // 2. Sync active regional basis
+      this.currentRegion = region;
+      const topSelect = document.getElementById('regionSelect');
+      if (topSelect) topSelect.value = region;
+      this.applyRegionalPrices(region);
+
+      this.closeModal('modalCreateProject');
+      this.render();
+      this.switchView('rab');
+      this.showToast('Proyek lama berhasil disimpan ke arsip. Lembar proyek baru siap digunakan!');
+    }
+
+    openProjectManagerModal() {
+      const searchInput = document.getElementById('projectManagerSearchInput');
+      if (searchInput) searchInput.value = '';
+      this.renderProjectManagerList('');
+      this.openModal('modalProjectManager');
+    }
+
+    renderProjectManagerList(filterText = '') {
+      const container = document.getElementById('projectManagerListContainer');
+      if (!container) return;
+
+      const list = this.rabEngine.getSavedProjectsList();
+      const activeProjId = this.rabEngine.project.id || (this.rabEngine.project.info && this.rabEngine.project.info.id);
+      const q = (filterText || '').toLowerCase().trim();
+
+      const filtered = list.filter(p => {
+        if (!q) return true;
+        const name = (p.info && p.info.name) || '';
+        const loc = (p.info && p.info.location) || '';
+        const yr = (p.info && p.info.year) || '';
+        return name.toLowerCase().includes(q) || loc.toLowerCase().includes(q) || yr.includes(q);
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:2rem 1rem; color:#64748b; background:#f8fafc; border-radius:8px; border:1px dashed #cbd5e1;">' +
+          '<div style="font-size:1.1rem; font-weight:700; margin-bottom:0.35rem; color:#1e293b;">Tidak Ada Proyek Ditemukan</div>' +
+          '<p style="font-size:0.85rem;">Tidak ada data proyek yang cocok dengan kata kunci pencarian Anda.</p>' +
+          '</div>';
+        return;
+      }
+
+      let html = '';
+      filtered.forEach((p, idx) => {
+        const info = p.info || {};
+        const pId = p.id || info.id || ('proj_' + idx);
+        const isActive = (pId === activeProjId);
+        
+        let totalItems = 0;
+        (p.divisions || []).forEach(d => { totalItems += (d.items || []).length; });
+
+        const updatedDate = p.updatedAt ? new Date(p.updatedAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+
+        html += '<div class="card" style="margin-bottom:0; padding:1.15rem; border:' + (isActive ? '2px solid var(--primary-600); background:#f0f9ff;' : '1px solid var(--border-subtle);') + ' border-radius:var(--radius-lg); box-shadow:var(--shadow-sm);">' +
+          '<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; flex-wrap:wrap;">' +
+          '<div style="flex:1; min-width:240px;">' +
+          '<div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.35rem;">' +
+          '<h4 style="font-size:1rem; font-weight:800; color:' + (isActive ? 'var(--primary-700);' : '#0f172a;') + ' margin:0;">' + (info.name || 'TANPA NAMA') + '</h4>' +
+          (isActive ? '<span class="badge badge-primary" style="font-weight:800; font-size:0.7rem;">SEDANG AKTIF</span>' : '') +
+          '</div>' +
+          '<div style="font-size:0.8rem; color:#64748b; display:flex; flex-wrap:wrap; gap:0.75rem; margin-bottom:0.5rem;">' +
+          '<span>📍 ' + (info.location || 'Kab. Barito Utara') + '</span>' +
+          '<span>📅 TA: ' + (info.year || '2026') + '</span>' +
+          '<span>⏱️ ' + (info.durationWeeks || 16) + ' Minggu</span>' +
+          '<span>📂 ' + (p.divisions || []).length + ' Divisi (' + totalItems + ' Item)</span>' +
+          '</div>' +
+          '<div style="display:flex; align-items:baseline; gap:0.5rem;">' +
+          '<span style="font-size:0.75rem; color:#475569; font-weight:600;">Total Nilai RAB (Kontrak):</span>' +
+          '<span style="font-size:1.1rem; font-weight:800; font-family:var(--font-mono); color:var(--primary-700);">' + Utils.formatRupiah(p.grandTotal || 0) + '</span>' +
+          '</div>' +
+          '<div style="font-size:0.725rem; color:#94a3b8; margin-top:0.35rem;">Terakhir diedit: ' + updatedDate + '</div>' +
+          '</div>' +
+          '<div style="display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap;">' +
+          (isActive ?
+            '<button type="button" class="btn btn-secondary btn-sm" disabled style="opacity:0.65; cursor:default;">Sedang Dibuka</button>' :
+            '<button type="button" class="btn btn-primary btn-sm btn-open-saved-proj" data-id="' + pId + '" title="Buka dan jadikan proyek aktif untuk diedit">▶ Buka Proyek</button>') +
+          '<button type="button" class="btn btn-outline btn-sm btn-dup-saved-proj" data-id="' + pId + '" title="Gandakan / Buat Salinan Proyek">📋 Duplikat</button>' +
+          '<button type="button" class="btn btn-outline btn-sm btn-export-saved-proj" data-id="' + pId + '" title="Unduh File Cadangan JSON">💾 Backup</button>' +
+          (!isActive ? '<button type="button" class="btn btn-outline btn-sm btn-del-saved-proj" data-id="' + pId + '" style="color:var(--rose-600); border-color:var(--rose-200);" title="Hapus Proyek dari Arsip">🗑️</button>' : '') +
+          '</div>' +
+          '</div>' +
+          '</div>';
+      });
+
+      container.innerHTML = html;
+
+      // Attach event clicks for list items
+      container.querySelectorAll('.btn-open-saved-proj').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const pId = btn.getAttribute('data-id');
+          this.handleOpenSavedProject(pId);
+        });
+      });
+
+      container.querySelectorAll('.btn-dup-saved-proj').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const pId = btn.getAttribute('data-id');
+          this.handleDuplicateSavedProject(pId);
+        });
+      });
+
+      container.querySelectorAll('.btn-export-saved-proj').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const pId = btn.getAttribute('data-id');
+          this.handleExportSavedProject(pId);
+        });
+      });
+
+      container.querySelectorAll('.btn-del-saved-proj').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const pId = btn.getAttribute('data-id');
+          this.handleDeleteSavedProject(pId);
+        });
+      });
+    }
+
+    handleOpenSavedProject(projId) {
+      const loaded = this.rabEngine.openSavedProject(projId);
+      if (loaded) {
+        this.currentRegion = (loaded.info && loaded.info.region) || 'MUARA_TEWEH';
+        const topSelect = document.getElementById('regionSelect');
+        if (topSelect) topSelect.value = this.currentRegion;
+        this.applyRegionalPrices(this.currentRegion);
+
+        this.closeModal('modalProjectManager');
+        this.render();
+        this.showToast('Proyek "' + (loaded.info.name || '') + '" berhasil dibuka dan dimuat!');
+      }
+    }
+
+    handleDuplicateSavedProject(projId) {
+      const cloned = this.rabEngine.duplicateProject(projId);
+      if (cloned) {
+        this.renderProjectManagerList(document.getElementById('projectManagerSearchInput')?.value || '');
+        this.showToast('Proyek berhasil disalin/diduplikat!');
+      }
+    }
+
+    handleExportSavedProject(projId) {
+      const list = this.rabEngine.getSavedProjectsList();
+      const proj = list.find(p => p.id === projId || (p.info && p.info.id === projId)) || this.rabEngine.project;
+      const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(proj, null, 2));
+      const dlAnchor = document.createElement('a');
+      const filename = (proj.info && proj.info.name ? proj.info.name.replace(/\s+/g, '_') : 'proyek') + '_backup.json';
+      dlAnchor.setAttribute('href', dataStr);
+      dlAnchor.setAttribute('download', filename);
+      dlAnchor.click();
+      this.showToast('File backup proyek berhasil diunduh');
+    }
+
+    handleDeleteSavedProject(projId) {
+      if (confirm('Apakah Anda yakin ingin menghapus proyek ini secara permanen dari daftar arsip?')) {
+        this.rabEngine.deleteSavedProject(projId);
+        this.renderProjectManagerList(document.getElementById('projectManagerSearchInput')?.value || '');
+        this.render();
+        this.showToast('Proyek berhasil dihapus dari daftar');
+      }
     }
 
     openProjectInfoModal() {
