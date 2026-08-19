@@ -86,8 +86,8 @@
 
         <!-- 2. TAB REGISTER -->
         <div id="authTabRegister" class="auth-tab-content" style="display: none;">
-          <div style="background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 0.65rem 0.85rem; border-radius: var(--radius-md); font-size: 0.775rem; line-height: 1.4; margin-bottom: 1rem;">
-            ℹ️ <strong>Persetujuan Admin:</strong> Akun baru yang didaftarkan akan berstatus <em>Pending</em> dan harus disetujui terlebih dahulu oleh Admin (<strong>irsyadisty</strong>) sebelum dapat digunakan untuk login.
+          <div style="background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 0.65rem 0.85rem; border-radius: var(--radius-md); font-size: 0.775rem; line-height: 1.4; margin-bottom: 1rem;">
+            ⚡ <strong>Auto Approve Aktif:</strong> Akun baru yang didaftarkan akan langsung aktif secara otomatis dan dapat langsung digunakan untuk masuk ke Web App RAB.
           </div>
           <form id="formPortalRegister">
             <div class="form-group" style="margin-bottom: 0.85rem;">
@@ -1120,6 +1120,10 @@
                 <span>Pratinjau / Cetak</span>
               </button>
             </div>
+          </div>
+        </div>
+      </section>
+
       <!-- =================================================================== -->
       <!-- VIEW 9: PENGATURAN AKUN & MANAJEMEN SISTEM                          -->
       <!-- =================================================================== -->
@@ -1771,6 +1775,8 @@
         </button>
       </div>
     </div>
+  </div>
+
   <!-- ============================================================ -->
   <!-- MODAL: HAPUS AKUN                                            -->
   <!-- ============================================================ -->
@@ -1876,6 +1882,7 @@
 
   <!-- DATA & APP SCRIPT -->
   <script src="js/data/ahsp-database-2026.js"></script>
+  <script src="js/api.js"></script>
   <script src="js/bundle.js"></script>
 </body>
 </html>

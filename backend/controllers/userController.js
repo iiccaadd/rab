@@ -16,13 +16,21 @@ const userController = {
         return res.status(404).json({ success: false, message: 'User tidak ditemukan.' });
       }
 
+      const isAdmin = user.name?.toLowerCase() === 'irsyadisty' || user.email?.toLowerCase() === 'irsyadisty@mirstyvanconstruction.com';
+
       return res.status(200).json({
         success: true,
         data: {
           id: user.id,
           name: user.name,
           email: user.email,
+          phone: user.phone_number,
+          bio: user.bio,
+          avatarUrl: user.avatar_url,
+          role: isAdmin ? 'admin' : 'user',
           emailVerified: user.email_verified,
+          isApproved: user.is_approved,
+          status: user.status,
           twoFactorEnabled: user.two_factor_enabled,
           createdAt: user.created_at,
         },

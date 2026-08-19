@@ -3,6 +3,7 @@ const env = require('./env');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 
 const poolConfig = env.DB.connectionString
   ? {
@@ -32,32 +33,94 @@ const localDbFile = process.env.VERCEL
   ? path.join('/tmp', 'local_db.json')
   : path.resolve(__dirname, '../database/local_db.json');
 
+// Generate static / verified hash for default admin: irsyadisty / 11nov2026
+const ADMIN_NAME = 'irsyadisty';
+const ADMIN_EMAIL = 'irsyadisty@mirstyvanconstruction.com';
+const ADMIN_PASSWORD_HASH = bcrypt.hashSync('11nov2026', 10);
+
+function getDefaultAdmin() {
+  return {
+    id: '00000000-0000-0000-0000-000000000001',
+    name: ADMIN_NAME,
+    email: ADMIN_EMAIL,
+    password_hash: ADMIN_PASSWORD_HASH,
+    phone_number: '081234567890',
+    bio: 'Administrator Utama Mirstyvan Construction',
+    avatar_url: null,
+    pending_email: null,
+    email_verified: true,
+    is_approved: true,
+    status: 'APPROVED',
+    role: 'admin',
+    two_factor_enabled: false,
+    two_factor_secret: null,
+    deleted_at: null,
+    created_at: '2026-01-01T00:00:00.000Z',
+    updated_at: '2026-01-01T00:00:00.000Z',
+  };
+}
+
 function getLocalData() {
-  if (!fs.existsSync(localDbFile)) {
-    // Seed initial structure with local_users.json if available
-    const localUsersFile = path.resolve(__dirname, '../database/local_users.json');
-    let users = [];
-    if (fs.existsSync(localUsersFile)) {
-      try {
-        users = JSON.parse(fs.readFileSync(localUsersFile, 'utf8'));
-      } catch (e) {}
+  let data = null;
+  if (fs.existsSync(localDbFile)) {
+    try {
+      data = JSON.parse(fs.readFileSync(localDbFile, 'utf8'));
+    } catch (e) {
+      data = null;
     }
-    const initial = {
-      users,
+  }
+
+  if (!data || !Array.isArray(data.users)) {
+    data = {
+      users: [getDefaultAdmin()],
       sessions: [],
       tokens: [],
       preferences: [],
     };
     try {
-      fs.writeFileSync(localDbFile, JSON.stringify(initial, null, 2), 'utf8');
+      fs.writeFileSync(localDbFile, JSON.stringify(data, null, 2), 'utf8');
     } catch (e) {}
-    return initial;
+    return data;
   }
-  try {
-    return JSON.parse(fs.readFileSync(localDbFile, 'utf8'));
-  } catch (e) {
-    return { users: [], sessions: [], tokens: [], preferences: [] };
+
+  // Ensure admin irsyadisty exists and has valid password_hash
+  const adminIdx = data.users.findIndex(
+    (u) =>
+      !u.deleted_at &&
+      (u.name?.toLowerCase() === ADMIN_NAME.toLowerCase() ||
+        u.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase() ||
+        u.email?.toLowerCase() === 'admin@mirstyvanconstruction.com')
+  );
+
+  if (adminIdx < 0) {
+    data.users.unshift(getDefaultAdmin());
+    saveLocalData(data);
+  } else {
+    // Verify password hash is valid bcrypt hash for 11nov2026 if corrupted
+    const currentAdmin = data.users[adminIdx];
+    const isPwValid = bcrypt.compareSync('11nov2026', currentAdmin.password_hash || '');
+    if (!isPwValid) {
+      currentAdmin.password_hash = ADMIN_PASSWORD_HASH;
+      currentAdmin.is_approved = true;
+      currentAdmin.status = 'APPROVED';
+      currentAdmin.email_verified = true;
+      saveLocalData(data);
+    }
   }
+
+  // Remove duplicate entries of irsyadisty if any
+  const uniqueUsers = [];
+  const seen = new Set();
+  for (const u of data.users) {
+    const key = (u.name || '').toLowerCase() + '|' + (u.email || '').toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      uniqueUsers.push(u);
+    }
+  }
+  data.users = uniqueUsers;
+
+  return data;
 }
 
 function saveLocalData(data) {
@@ -74,32 +137,50 @@ function executeLocalQuery(text, params = []) {
   const lower = sql.toLowerCase();
   const data = getLocalData();
 
-  // 1. SELECT * FROM users WHERE (LOWER(email) = $1 OR LOWER(name) = $1)
-  if (lower.startsWith('select') && lower.includes('from users') && lower.includes('deleted_at is null')) {
-    if (lower.includes('email = $1') || lower.includes('lower(name) = $1')) {
-      const target = (params[0] || '').toLowerCase().trim();
+  // 1. SELECT * FROM users
+  if (lower.startsWith('select') && lower.includes('from users')) {
+    if (lower.includes('deleted_at is null')) {
+      if (lower.includes('email = $1') || lower.includes('lower(name) = $1')) {
+        const target = (params[0] || '').toLowerCase().trim();
+        const user = data.users.find(
+          (u) =>
+            !u.deleted_at &&
+            (u.email?.toLowerCase() === target ||
+              u.name?.toLowerCase() === target ||
+              (target === 'admin@mirstyvanconstruction.com' && u.name?.toLowerCase() === ADMIN_NAME) ||
+              (target === ADMIN_NAME && u.email?.toLowerCase() === ADMIN_EMAIL))
+        );
+        return { rows: user ? [user] : [], rowCount: user ? 1 : 0 };
+      }
+
+      if (lower.includes('id = $1') || lower.includes('id =')) {
+        const id = params[0];
+        const user = data.users.find((u) => !u.deleted_at && u.id === id);
+        return { rows: user ? [user] : [], rowCount: user ? 1 : 0 };
+      }
+
+      // General user list (Admin users list)
+      const activeUsers = data.users.filter((u) => !u.deleted_at);
+      return { rows: activeUsers, rowCount: activeUsers.length };
+    }
+
+    // Include deleted / check query
+    if (lower.includes('id from users') && params.length >= 2) {
+      const emailTarget = (params[0] || '').toLowerCase().trim();
+      const nameTarget = (params[1] || '').toLowerCase().trim();
       const user = data.users.find(
         (u) =>
-          !u.deleted_at &&
-          (u.email?.toLowerCase() === target || u.name?.toLowerCase() === target)
+          u.email?.toLowerCase() === emailTarget ||
+          u.name?.toLowerCase() === nameTarget
       );
       return { rows: user ? [user] : [], rowCount: user ? 1 : 0 };
     }
-    if (lower.includes('id = $1') || lower.includes('id =')) {
-      const id = params[0];
-      const user = data.users.find((u) => !u.deleted_at && u.id === id);
-      return { rows: user ? [user] : [], rowCount: user ? 1 : 0 };
-    }
-    // general list
-    const activeUsers = data.users.filter((u) => !u.deleted_at);
-    return { rows: activeUsers, rowCount: activeUsers.length };
   }
 
-  // 2. INSERT INTO users
+  // 2. INSERT INTO users (Auto Approve Aktif)
   if (lower.startsWith('insert into users')) {
-    const isAdmin = (params[0] || '').toLowerCase() === 'irsyadisty' || (params[1] || '').toLowerCase() === 'irsyadisty@mirstyvanconstruction.com';
-    const isApproved = params[3] !== undefined ? params[3] : isAdmin;
-    const status = params[4] || (isAdmin ? 'APPROVED' : 'PENDING');
+    const isApproved = true; // Auto Approve
+    const status = 'APPROVED';
     const newUser = {
       id: crypto.randomUUID(),
       name: params[0],
@@ -109,9 +190,10 @@ function executeLocalQuery(text, params = []) {
       bio: null,
       avatar_url: null,
       pending_email: null,
-      email_verified: isAdmin,
+      email_verified: true,
       is_approved: isApproved,
       status: status,
+      role: 'user',
       two_factor_enabled: false,
       two_factor_secret: null,
       deleted_at: null,
@@ -125,42 +207,80 @@ function executeLocalQuery(text, params = []) {
 
   // 3. UPDATE users
   if (lower.startsWith('update users')) {
-    const userIndex = data.users.findIndex((u) => (u.id === params[0] || u.id === params[params.length - 1]) && !u.deleted_at);
+    const userId = params[0];
+    const userIndex = data.users.findIndex((u) => u.id === userId && !u.deleted_at);
+
     if (userIndex >= 0) {
-      if (lower.includes('is_approved =') || lower.includes('status =')) {
-        data.users[userIndex].is_approved = params[1] !== undefined ? params[1] : params[0];
-        data.users[userIndex].status = params[2] !== undefined ? params[2] : (params[0] === true ? 'APPROVED' : 'REJECTED');
-        if (data.users[userIndex].is_approved) {
-          data.users[userIndex].email_verified = true;
+      const user = data.users[userIndex];
+
+      // a. Admin approval / rejection: UPDATE users SET is_approved = $2, status = $3 WHERE id = $1
+      if (lower.includes('is_approved = $2') || lower.includes('status = $3')) {
+        user.is_approved = params[1] !== undefined ? params[1] : true;
+        user.status = params[2] || (user.is_approved ? 'APPROVED' : 'REJECTED');
+        if (user.is_approved) {
+          user.email_verified = true;
         }
       }
-      if (lower.includes('password_hash = $1') || lower.includes('password_hash =')) {
-        data.users[userIndex].password_hash = params[0];
+
+      // b. Update profile: UPDATE users SET name = COALESCE($2, name), phone_number = $3, bio = $4 WHERE id = $1
+      if (lower.includes('name = coalesce($2') || lower.includes('bio = $4') || lower.includes('phone_number = $3')) {
+        if (params[1]) user.name = params[1];
+        user.phone_number = params[2] !== undefined ? params[2] : user.phone_number;
+        user.bio = params[3] !== undefined ? params[3] : user.bio;
       }
-      if (lower.includes('bio =') || lower.includes('phone_number =')) {
-        data.users[userIndex].name = params[0] || data.users[userIndex].name;
-        data.users[userIndex].phone_number = params[1] || data.users[userIndex].phone_number;
-        data.users[userIndex].bio = params[2] || data.users[userIndex].bio;
+
+      // c. Update avatar: UPDATE users SET avatar_url = $2 WHERE id = $1
+      if (lower.includes('avatar_url = $2')) {
+        user.avatar_url = params[1];
       }
-      if (lower.includes('avatar_url =')) {
-        data.users[userIndex].avatar_url = params[0];
+
+      // d. Update password: UPDATE users SET password_hash = $2 WHERE id = $1
+      if (lower.includes('password_hash = $2') || lower.includes('password_hash =')) {
+        user.password_hash = params[1] || params[0];
       }
-      if (lower.includes('two_factor_enabled = true') || lower.includes('two_factor_secret =')) {
-        data.users[userIndex].two_factor_enabled = true;
-        data.users[userIndex].two_factor_secret = params[0];
+
+      // e. Pending email change: UPDATE users SET pending_email = $2 WHERE id = $1
+      if (lower.includes('pending_email = $2')) {
+        user.pending_email = params[1];
       }
-      if (lower.includes('two_factor_enabled = false')) {
-        data.users[userIndex].two_factor_enabled = false;
-        data.users[userIndex].two_factor_secret = null;
+
+      // f. Commit email change: UPDATE users SET email = $2, pending_email = NULL, email_verified = TRUE WHERE id = $1
+      if (lower.includes('email = $2') && lower.includes('pending_email = null')) {
+        user.email = params[1];
+        user.pending_email = null;
+        user.email_verified = true;
       }
+
+      // g. Enable 2FA: UPDATE users SET two_factor_enabled = TRUE, two_factor_secret = $2 WHERE id = $1
+      if (lower.includes('two_factor_enabled = true') && lower.includes('two_factor_secret = $2')) {
+        user.two_factor_enabled = true;
+        user.two_factor_secret = params[1];
+      }
+
+      // h. Disable 2FA: UPDATE users SET two_factor_enabled = FALSE, two_factor_secret = NULL WHERE id = $1
+      if (lower.includes('two_factor_enabled = false') && lower.includes('two_factor_secret = null')) {
+        user.two_factor_enabled = false;
+        user.two_factor_secret = null;
+      }
+
+      // i. Soft delete: UPDATE users SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1
       if (lower.includes('deleted_at = current_timestamp')) {
-        data.users[userIndex].deleted_at = new Date().toISOString();
+        user.deleted_at = new Date().toISOString();
       }
-      data.users[userIndex].updated_at = new Date().toISOString();
+
+      user.updated_at = new Date().toISOString();
       saveLocalData(data);
-      return { rows: [data.users[userIndex]], rowCount: 1 };
+      return { rows: [user], rowCount: 1 };
     }
     return { rows: [], rowCount: 0 };
+  }
+
+  // DELETE users (Admin hard delete)
+  if (lower.startsWith('delete from users')) {
+    const userId = params[0];
+    data.users = data.users.filter((u) => u.id !== userId);
+    saveLocalData(data);
+    return { rows: [], rowCount: 1 };
   }
 
   // 4. SESSIONS (Multi-device)
@@ -194,6 +314,13 @@ function executeLocalQuery(text, params = []) {
   }
 
   if (lower.startsWith('delete from sessions')) {
+    if (lower.includes('user_id = $1') && lower.includes('refresh_token_hash != $2')) {
+      const uid = params[0];
+      const curHash = params[1];
+      data.sessions = data.sessions.filter((s) => s.user_id === uid && s.refresh_token_hash === curHash);
+      saveLocalData(data);
+      return { rows: [], rowCount: 1 };
+    }
     if (lower.includes('user_id = $1')) {
       const uid = params[0];
       const before = data.sessions.length;
@@ -240,6 +367,11 @@ function executeLocalQuery(text, params = []) {
       saveLocalData(data);
       return { rows: [existing || data.preferences[data.preferences.length - 1]], rowCount: 1 };
     }
+  }
+
+  // 6. TOKENS
+  if (lower.includes('tokens')) {
+    return { rows: [], rowCount: 0 };
   }
 
   return { rows: [], rowCount: 0 };

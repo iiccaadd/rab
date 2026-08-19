@@ -3807,7 +3807,7 @@
       }
 
       document.addEventListener('click', (e) => {
-        const btn = e.target.closest('.nav-tab-btn');
+        const btn = e.target.closest('.nav-tab-btn, [data-view]');
         if (btn && btn.dataset.view) {
           e.preventDefault();
           this.switchView(btn.dataset.view);
@@ -4265,6 +4265,11 @@
 
       if (viewId === 'settings') {
         this.loadUserProfile();
+        const activeSubBtn = document.querySelector('.settings-tab-btn.active');
+        const activeTabKey = activeSubBtn ? activeSubBtn.getAttribute('data-tab') : 'tabProfile';
+        document.querySelectorAll('.settings-section').forEach(sec => {
+          sec.style.display = (sec.id === activeTabKey) ? 'block' : 'none';
+        });
       }
 
       this.render();
@@ -5597,15 +5602,21 @@
 
           try {
             const res = await API.login({ emailOrUsername, password, remember });
+            if (!res.success) {
+              this.setAuthPortalAlert('danger', res.message || 'Login gagal. Periksa username dan password Anda.');
+              return;
+            }
             if (res.requires2FA) {
               this.temp2FAToken = res.tempToken;
               this.switchAuthTab('authTab2FA');
               this.setAuthPortalAlert('info', 'Masukkan 6 digit kode dari Google Authenticator Anda.');
-            } else if (res.token) {
+            } else if (res.token || res.accessToken) {
               this.hideAuthOverlay();
               this.showToast('Selamat datang kembali, ' + (res.user ? res.user.name : emailOrUsername) + '!');
               this.loadUserProfile();
               this.switchView('dashboard');
+            } else {
+              this.setAuthPortalAlert('danger', res.message || 'Login gagal. Periksa username dan password Anda.');
             }
           } catch (err) {
             this.setAuthPortalAlert('danger', err.message || 'Login gagal. Periksa username dan password Anda.');
@@ -5638,7 +5649,9 @@
             const res = await API.register({ name, email, password, confirmPassword });
             formRegister.reset();
             this.switchAuthTab('authTabLogin');
-            const alertMsg = res.message || 'Pendaftaran berhasil! Akun Anda sedang menunggu persetujuan dari Admin (irsyadisty).';
+            const loginEmailInput = document.getElementById('loginPortalEmail');
+            if (loginEmailInput) loginEmailInput.value = email;
+            const alertMsg = res.message || 'Pendaftaran berhasil! Akun Anda telah aktif secara otomatis (Auto Approve). Silakan masukkan kata sandi untuk masuk.';
             this.setAuthPortalAlert('success', alertMsg);
           } catch (err) {
             this.setAuthPortalAlert('danger', err.message || 'Pendaftaran gagal.');
@@ -6202,7 +6215,7 @@
 
       try {
         const res = await API.request('/api/settings/admin/users');
-        this.cachedAdminUsers = res.users || [];
+        this.cachedAdminUsers = res.data || res.users || [];
 
         // Update pending count badge
         const pendingCount = this.cachedAdminUsers.filter(u => (u.status || 'PENDING').toUpperCase() === 'PENDING').length;

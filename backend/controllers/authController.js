@@ -81,14 +81,14 @@ const authController = {
 
       return res.status(201).json({
         success: true,
-        message: 'Pendaftaran berhasil! Akun Anda telah terdaftar dan sedang menunggu persetujuan dari Administrator (irsyadisty). Anda baru dapat masuk setelah akun diaktifkan oleh admin.',
+        message: 'Pendaftaran berhasil! Akun Anda telah aktif secara otomatis (Auto Approve). Silakan masuk ke aplikasi.',
         data: {
           id: newUser.id,
           name: newUser.name,
           email: newUser.email,
-          emailVerified: false,
-          isApproved: newUser.is_approved,
-          status: newUser.status,
+          emailVerified: true,
+          isApproved: true,
+          status: 'APPROVED',
         },
       });
     } catch (error) {
@@ -123,25 +123,25 @@ const authController = {
         return res.status(400).json({
           success: false,
           message: 'Token verifikasi tidak valid atau telah kedaluwarsa.',
-          code: 'TOKEN_INVALID_OR_EXPIRED',
+          code: 'INVALID_TOKEN',
         });
       }
 
-      // Update status email_verified = true
-      await userModel.updateEmailVerified(record.user_id, true);
+      // Tandai email user sebagai verified
+      await userModel.verifyEmail(record.user_id);
 
-      // Tandai token sebagai used
-      await tokenModel.markVerificationTokenUsed(record.id);
+      // Hapus token yang sudah digunakan
+      await tokenModel.deleteToken(record.id);
 
       return res.status(200).json({
         success: true,
-        message: 'Email Anda berhasil diverifikasi! Anda sekarang dapat login ke akun Anda.',
+        message: 'Alamat email berhasil diverifikasi.',
       });
     } catch (error) {
       console.error('Error in verifyEmail:', error);
       return res.status(500).json({
         success: false,
-        message: 'Terjadi kesalahan pada server saat memverifikasi email.',
+        message: 'Terjadi kesalahan pada server saat verifikasi email.',
       });
     }
   },
@@ -178,23 +178,13 @@ const authController = {
         });
       }
 
-      // Cek apakah akun memerlukan persetujuan Administrator (kecuali akun admin irsyadisty)
-      const isAdmin = user.name?.toLowerCase() === 'irsyadisty' || user.email?.toLowerCase() === 'irsyadisty@mirstyvanconstruction.com';
-      if (!isAdmin) {
-        if (user.status === 'REJECTED') {
-          return res.status(403).json({
-            success: false,
-            message: 'Pendaftaran akun Anda telah ditolak oleh Administrator (irsyadisty).',
-            code: 'ACCOUNT_REJECTED',
-          });
-        }
-        if (!user.is_approved || user.status === 'PENDING') {
-          return res.status(403).json({
-            success: false,
-            message: 'Akun Anda sedang menunggu persetujuan dari Administrator (irsyadisty). Silakan hubungi admin untuk aktivasi.',
-            code: 'ACCOUNT_PENDING_APPROVAL',
-          });
-        }
+      // Cek status penolakan akun jika diblokir oleh admin
+      if (user.status === 'REJECTED') {
+        return res.status(403).json({
+          success: false,
+          message: 'Pendaftaran akun Anda telah ditolak oleh Administrator.',
+          code: 'ACCOUNT_REJECTED',
+        });
       }
 
       // Cek apakah 2FA aktif untuk user ini

@@ -2,12 +2,11 @@ const db = require('../config/db');
 
 const userModel = {
   /**
-   * Buat user baru di database
+   * Buat user baru di database (Auto Approve aktif)
    */
   async create({ name, email, passwordHash }) {
-    const isAdmin = name?.toLowerCase() === 'irsyadisty' || email?.toLowerCase() === 'irsyadisty@mirstyvanconstruction.com';
-    const isApproved = isAdmin;
-    const status = isAdmin ? 'APPROVED' : 'PENDING';
+    const isApproved = true; // Auto Approve diaktifkan
+    const status = 'APPROVED';
 
     const query = `
       INSERT INTO users (name, email, password_hash, is_approved, status)

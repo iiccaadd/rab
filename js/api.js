@@ -205,6 +205,141 @@ const API = (() => {
     put: (endpoint, body, options) => request(endpoint, { ...options, method: 'PUT', body: JSON.stringify(body) }),
     delete: (endpoint, options) => request(endpoint, { ...options, method: 'DELETE' }),
     upload: (endpoint, formData) => upload(endpoint, formData),
+    request,
+
+    // Auth helpers
+    login: async ({ emailOrUsername, password, remember }) => {
+      const res = await request('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email: emailOrUsername, password, remember }),
+      });
+      if (res.success && res.accessToken) {
+        setAccessToken(res.accessToken);
+        if (res.user) localStorage.setItem('user_info', JSON.stringify(res.user));
+      }
+      return {
+        ...res,
+        token: res.accessToken,
+        requires2FA: res.require2FA,
+        tempToken: res.tempToken,
+      };
+    },
+
+    register: async ({ name, email, password, confirmPassword }) => {
+      return await request('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ name, email, password, confirmPassword }),
+      });
+    },
+
+    forgotPassword: async (email) => {
+      return await request('/api/auth/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      });
+    },
+
+    verifyLogin2FA: async (tempToken, code) => {
+      const res = await request('/api/auth/2fa/verify-login', {
+        method: 'POST',
+        body: JSON.stringify({ tempToken, token: code }),
+      });
+      if (res.success && res.accessToken) {
+        setAccessToken(res.accessToken);
+        if (res.user) localStorage.setItem('user_info', JSON.stringify(res.user));
+      }
+      return {
+        ...res,
+        token: res.accessToken,
+      };
+    },
+
+    // Profile & Settings
+    getProfile: async () => {
+      const res = await request('/api/user/profile');
+      return res.data || res;
+    },
+
+    updateProfile: async ({ name, phone, bio }) => {
+      return await request('/api/settings/profile', {
+        method: 'PUT',
+        body: JSON.stringify({ name, phoneNumber: phone, bio }),
+      });
+    },
+
+    uploadAvatar: async (formData) => {
+      return await upload('/api/settings/avatar', formData);
+    },
+
+    changeEmail: async (newEmail) => {
+      return await request('/api/settings/email', {
+        method: 'PUT',
+        body: JSON.stringify({ newEmail }),
+      });
+    },
+
+    changePassword: async (oldPassword, newPassword, confirmPassword) => {
+      return await request('/api/settings/password', {
+        method: 'PUT',
+        body: JSON.stringify({ currentPassword: oldPassword, newPassword, confirmPassword }),
+      });
+    },
+
+    setup2FA: async () => {
+      const res = await request('/api/auth/2fa/enable', { method: 'POST' });
+      return res.data || res;
+    },
+
+    enable2FA: async (secret, token) => {
+      return await request('/api/auth/2fa/verify-setup', {
+        method: 'POST',
+        body: JSON.stringify({ secret, token }),
+      });
+    },
+
+    disable2FA: async (password) => {
+      return await request('/api/auth/2fa/disable', {
+        method: 'POST',
+        body: JSON.stringify({ password }),
+      });
+    },
+
+    getSessions: async () => {
+      const res = await request('/api/settings/sessions');
+      return { sessions: res.data || [] };
+    },
+
+    revokeSession: async (sessionId) => {
+      return await request(`/api/settings/sessions/${encodeURIComponent(sessionId)}`, {
+        method: 'DELETE',
+      });
+    },
+
+    revokeOtherSessions: async () => {
+      return await request('/api/settings/sessions/all', {
+        method: 'DELETE',
+      });
+    },
+
+    getPreferences: async () => {
+      const res = await request('/api/settings/preferences');
+      return { preferences: res.data || {} };
+    },
+
+    updatePreferences: async (data) => {
+      return await request('/api/settings/preferences', {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+    },
+
+    deleteAccount: async (data) => {
+      return await request('/api/settings/account', {
+        method: 'DELETE',
+        body: JSON.stringify(data),
+      });
+    },
+
     logout,
     getUser,
     setAccessToken,
