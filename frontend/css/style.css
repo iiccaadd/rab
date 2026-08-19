@@ -62,8 +62,9 @@ body {
   background: #f8fafc;
   color: var(--slate-800);
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }

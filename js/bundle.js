@@ -4361,6 +4361,13 @@
 
     switchView(viewId) {
       this.currentView = viewId;
+
+      // Close mobile drawer if opened
+      const appSidebar = document.getElementById('appSidebar');
+      const sidebarMobileBackdrop = document.getElementById('sidebarMobileBackdrop');
+      if (appSidebar) appSidebar.classList.remove('mobile-open');
+      if (sidebarMobileBackdrop) sidebarMobileBackdrop.classList.remove('active');
+
       document.querySelectorAll('.nav-tab-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.view === viewId);
       });
