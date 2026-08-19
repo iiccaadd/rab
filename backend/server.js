@@ -50,17 +50,23 @@ app.use(express.static(frontendPath));
 app.use(express.static(rootPath));
 app.use('/uploads', express.static(uploadsPath));
 
-// 6. API Routes
+// 6. API Routes (Mounted on both /api/ and direct paths for serverless compatibility)
 app.use('/api/auth', authRoutes);
+app.use('/auth', authRoutes);
+
 app.use('/api/user', userRoutes);
+app.use('/user', userRoutes);
+
 app.use('/api/settings', settingsRoutes);
+app.use('/settings', settingsRoutes);
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
+app.get(['/api/health', '/health'], (req, res) => {
   res.status(200).json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
     env: env.NODE_ENV,
+    serverless: !!process.env.VERCEL,
   });
 });
 

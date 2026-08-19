@@ -3,9 +3,16 @@ const path = require('path');
 const fs = require('fs');
 
 // Pastikan folder uploads/avatars ada
-const uploadDir = path.resolve(__dirname, '../../uploads/avatars');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+const uploadDir = process.env.VERCEL
+  ? path.join('/tmp', 'uploads', 'avatars')
+  : path.resolve(__dirname, '../../uploads/avatars');
+
+try {
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+} catch (e) {
+  // Silent fallback for read-only environments
 }
 
 // Konfigurasi Disk Storage
