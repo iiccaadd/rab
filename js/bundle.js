@@ -5735,7 +5735,6 @@
       this.currentRegion = region;
       const topSelect = document.getElementById('regionSelect');
       if (topSelect) topSelect.value = region;
-      this.applyRegionalPrices(region);
 
       this.closeModal('modalCreateProject');
       this.render();
@@ -5858,7 +5857,6 @@
         this.currentRegion = (loaded.info && loaded.info.region) || 'MUARA_TEWEH';
         const topSelect = document.getElementById('regionSelect');
         if (topSelect) topSelect.value = this.currentRegion;
-        this.applyRegionalPrices(this.currentRegion);
 
         this.closeModal('modalProjectManager');
         this.render();
