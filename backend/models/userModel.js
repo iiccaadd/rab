@@ -2,11 +2,11 @@ const db = require('../config/db');
 
 const userModel = {
   /**
-   * Buat user baru di database (Auto Approve aktif)
+   * Buat user baru di database (Manual Approve oleh Administrator)
    */
   async create({ name, email, passwordHash }) {
-    const isApproved = true; // Auto Approve diaktifkan
-    const status = 'APPROVED';
+    const isApproved = false; // Manual Approve oleh Administrator
+    const status = 'PENDING';
 
     const query = `
       INSERT INTO users (name, email, password_hash, is_approved, status)

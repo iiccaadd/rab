@@ -179,10 +179,10 @@ function executeLocalQuery(text, params = []) {
     }
   }
 
-  // 2. INSERT INTO users (Auto Approve Aktif)
+  // 2. INSERT INTO users (Manual Approve oleh Administrator)
   if (lower.startsWith('insert into users')) {
-    const isApproved = true; // Auto Approve
-    const status = 'APPROVED';
+    const isApproved = false; // Manual Approve oleh Administrator
+    const status = 'PENDING';
     const newUser = {
       id: crypto.randomUUID(),
       name: params[0],
@@ -192,8 +192,9 @@ function executeLocalQuery(text, params = []) {
       bio: null,
       avatar_url: null,
       pending_email: null,
-      email_verified: true,
-      is_approved: isApproved,
+      email_verified: false,
+      is_approved: false,
+      isApproved: false,
       status: status,
       role: 'user',
       two_factor_enabled: false,

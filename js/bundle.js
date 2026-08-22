@@ -6362,12 +6362,16 @@
 
           try {
             const res = await API.register({ name, email, password, confirmPassword });
-            formRegister.reset();
-            this.switchAuthTab('authTabLogin');
-            const loginEmailInput = document.getElementById('loginPortalEmail');
-            if (loginEmailInput) loginEmailInput.value = email;
-            const alertMsg = res.message || 'Pendaftaran berhasil! Akun Anda telah aktif secara otomatis (Auto Approve). Silakan masukkan kata sandi untuk masuk.';
-            this.setAuthPortalAlert('success', alertMsg);
+            if (res.success) {
+              formRegister.reset();
+              this.switchAuthTab('authTabLogin');
+              const loginEmailInput = document.getElementById('loginPortalEmail');
+              if (loginEmailInput) loginEmailInput.value = email;
+              const alertMsg = res.message || 'Pendaftaran berhasil! Akun Anda sedang menunggu persetujuan (approval) dari Administrator (irsyadisty). Mohon tunggu hingga akun diaktifkan oleh admin.';
+              this.setAuthPortalAlert('warning', alertMsg);
+            } else {
+              this.setAuthPortalAlert('danger', res.message || 'Pendaftaran gagal.');
+            }
           } catch (err) {
             this.setAuthPortalAlert('danger', err.message || 'Pendaftaran gagal.');
           } finally {

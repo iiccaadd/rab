@@ -81,14 +81,14 @@ const authController = {
 
       return res.status(201).json({
         success: true,
-        message: 'Pendaftaran berhasil! Akun Anda telah aktif secara otomatis (Auto Approve). Silakan masuk ke aplikasi.',
+        message: 'Pendaftaran berhasil! Akun Anda sedang menunggu persetujuan dari Administrator (irsyadisty). Mohon tunggu hingga akun disetujui admin untuk dapat masuk.',
         data: {
           id: newUser.id,
           name: newUser.name,
           email: newUser.email,
-          emailVerified: true,
-          isApproved: true,
-          status: 'APPROVED',
+          emailVerified: false,
+          isApproved: false,
+          status: 'PENDING',
         },
       });
     } catch (error) {
@@ -175,6 +175,15 @@ const authController = {
           success: false,
           message: genericErrorMessage,
           code: 'INVALID_CREDENTIALS',
+        });
+      }
+
+      // Cek status persetujuan akun oleh administrator
+      if (user.status === 'PENDING' || user.is_approved === false || user.isApproved === false) {
+        return res.status(403).json({
+          success: false,
+          message: 'Akun Anda sedang menunggu persetujuan (approval) dari Administrator (irsyadisty). Silakan hubungi admin untuk aktivasi.',
+          code: 'ACCOUNT_PENDING_APPROVAL',
         });
       }
 
