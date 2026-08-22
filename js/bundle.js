@@ -4050,13 +4050,22 @@
       const handleLogout = async (e) => {
         if (e) e.preventDefault();
         if (confirm('Apakah Anda yakin ingin keluar dari akun?')) {
-          if (typeof API !== 'undefined' && API.logout) {
-            await API.logout();
-          } else {
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('user_info');
-            window.location.href = 'login.html';
+          try {
+            if (typeof API !== 'undefined' && API.logout) {
+              await API.logout();
+              return;
+            }
+          } catch (err) {
+            console.warn('Logout error:', err);
           }
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('user_info');
+          sessionStorage.clear();
+          this.showAuthOverlay('Anda telah berhasil keluar dari akun.');
+          this.switchAuthTab('authTabLogin');
+          const pwdInput = document.getElementById('loginPortalPassword');
+          if (pwdInput) pwdInput.value = '';
+          this.showToast('Berhasil keluar dari akun');
         }
       };
 

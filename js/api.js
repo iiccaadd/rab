@@ -187,7 +187,11 @@ const API = (() => {
       console.warn('Logout network error:', e);
     }
     clearAuth();
-    window.location.href = 'login.html';
+    if (typeof window !== 'undefined' && typeof window._showAuthOverlay === 'function') {
+      window._showAuthOverlay('Anda telah berhasil keluar dari akun.');
+    } else {
+      window.location.href = 'index.html';
+    }
   }
 
   function getUser() {
